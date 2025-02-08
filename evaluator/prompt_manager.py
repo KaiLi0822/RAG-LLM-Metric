@@ -95,18 +95,59 @@ class EvaluationType(BasePrompt):
         )
     }
 
+    FACTUAL_CORRECTNESS = {
+    'template': (
+        "Evaluate the factual correctness of the generated answer compared to the golden (ground truth) answer.\n"
+        "Golden Answer: {golden_answer}\n"
+        "Generated Answer: {answer}\n"
+        "Consider these criteria: {criteria}\n\n"
+        "{formatter}"
+    ),
+    'criteria': (
+        "1. Identify factual statements in both the golden answer and the generated answer.\n"
+        "2. Classify statements as:\n"
+        "   - True Positives (TP): Present in both answers.\n"
+        "   - False Positives (FP): Present in the generated answer but not in the golden answer.\n"
+        "   - False Negatives (FN): Present in the golden answer but missing in the generated answer.\n"
+        "3. Ensure factual accuracy without adding or omitting key facts."
+    ),
+    'formatter': (
+        "Respond ONLY with a JSON object containing:\n"
+        "- extracted_statements (object with 'golden' and 'generated' arrays of key factual statements)\n"
+        "- TP (integer): Number of True Positive statements\n"
+        "- FP (integer): Number of False Positive statements\n"
+        "- FN (integer): Number of False Negative statements\n"
+        "- factual_correctness_score (float between 0-1, calculated as TP / (TP + FP + FN))\n"
+        "- reasons (array of 3 short strings explaining the score)\n"
+        "Example:\n"
+        "```json\n"
+        '{\n'
+        '  "extracted_statements": {\n'
+        '    "golden": ["The Eiffel Tower is in Paris", "It was built in 1889"],\n'
+        '    "generated": ["The Eiffel Tower is in Paris", "It was built in 1890"]\n'
+        '  },\n'
+        '  "TP": 1,\n'
+        '  "FP": 1,\n'
+        '  "FN": 1,\n'
+        '  "factual_correctness_score": 0.33,\n'
+        '  "reasons": ["Correct location mentioned", "Incorrect construction year", "Missed one key fact"]\n'
+        '}\n'
+        "```"
+    )
+}
+
+
 class PromptManager:
     """Manages prompt construction with JSON output formatting"""
     
     def __init__(self, default_type: EvaluationType = EvaluationType.RELEVANCE):
         self.default_type = default_type
-        self.custom_prompts: Dict[str, Dict[str, str]] = {}
     
     def build_prompt(
         self,
-        question: str,
-        context: str,
         answer: str,
+        question: str = "",
+        context: str = "",
         eval_type: EvaluationType = None,
         **kwargs: Any
     ) -> str:

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import os
+import re
 from openai import OpenAI
 import requests
 import json
@@ -19,6 +20,45 @@ class LLMClient(ABC):
             Generated text response from LLM
         """
         pass
+
+class LocalDeepSeekR1(LLMClient):
+    """using local deepSeek distill Qwen with OpenAI-compatible client
+       Follows instruction with https://github.com/deepseek-ai/DeepSeek-R1#usage-recommendations
+    """
+
+    def __init__(self,
+                 model: str = "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+                 base_url = "http://127.0.0.1:30000/v1",
+                 **kwargs):
+        api_key = os.getenv("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise ValueError("DEEPSEEK_API_KEY environment variable required")
+            
+        self.client = OpenAI(api_key=api_key, base_url=base_url)
+        self.model = model
+        self.params = {
+            "temperature": 0.6,
+            "max_tokens": 32000,
+            "top_p": 1,
+            "frequency_penalty": 0,
+            "presence_penalty": 0.5,
+        }
+        self.params.update(kwargs)        
+
+    def generate(self, prompt: str) -> str:
+        """Execute synchronous LLM call"""
+        messages = [
+            {"role": "user", "content": f"{prompt} \n\nAssistant: <think>\n"}
+        ]
+        
+        completion = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            **self.params
+        )
+        match  = re.search(r'</think>\n\n(.*)', completion.choices[0].message.content, re.DOTALL)
+        return match.group(1)
+
 
 class OpenAIClientLLM(LLMClient):
     """Concrete implementation using OpenAI-compatible client"""
@@ -50,8 +90,8 @@ class OpenAIClientLLM(LLMClient):
             "top_p": 1,
             "frequency_penalty": 0,
             "presence_penalty": 0.5,
-            **kwargs
         }
+        self.params.update(kwargs)
 
     def generate(self, prompt: str) -> str:
         """Execute synchronous LLM call"""

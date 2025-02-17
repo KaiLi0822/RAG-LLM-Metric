@@ -174,5 +174,5 @@ cython_debug/
 j/
 
 poetry.lock
-/tmp_data
+/**/tmp_data
 

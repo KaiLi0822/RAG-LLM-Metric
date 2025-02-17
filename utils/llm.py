@@ -75,8 +75,8 @@ class OpenAIClientLLM(LLMClient):
             "top_p": 1,
             "frequency_penalty": 0,
             "presence_penalty": 0.5,
-            **kwargs
         }
+        self.params.update(kwargs)
 
     def generate(self, prompt: str) -> str:
         """Execute synchronous LLM call"""
@@ -140,8 +140,8 @@ class HTTPLLM(LLMClient):
         self.params = {
             "stream": False,
             "max_tokens": 32000,
-            **kwargs
         }
+        self.params.update(kwargs)
 
     def generate(self, prompt: str) -> str:
         """Execute synchronous HTTP request"""

@@ -23,3 +23,4 @@ class BasePrompt(Enum):
     @classmethod
     def get_prompt_type(cls, name: str) -> 'BasePrompt':
         return cls[name.upper()]
+

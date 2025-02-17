@@ -2,7 +2,7 @@ import json
 from typing import Dict
 
 from data_annotator.base_annotator import DataAnnotator
-from data_annotator.prompt_manager import AnnotationType
+from data_annotator.prompt_manager import AnnotationType, AnnotatePromptManager
 from utils.constants import RAGBENCH_COL_NAMES
 from utils.llm import LLMClient
 
@@ -12,16 +12,15 @@ class KeyPointAnnotator(DataAnnotator):
     def __init__(
         self,
         llm_class: type[LLMClient] = None,
-        annotation_column: str = "key_points",
         **llm_kwargs,
     ):
-        super().__init__(llm_class, annotation_column, **llm_kwargs)
+        super().__init__(llm_class, **llm_kwargs)
 
     def pre_process(self, row: Dict) -> Dict:
         question = row[RAGBENCH_COL_NAMES.QUESTION.value]
         golden_answer = row[RAGBENCH_COL_NAMES.GOLDEN_ANSWER.value]
         return {
-            "prompt": self.prompt_manager.build_prompt(
+            "prompt": AnnotatePromptManager().build_prompt(
                 question=question,
                 golden_answer=golden_answer,
                 eval_type=AnnotationType.KEY_POINT_EXTRACTION,
@@ -37,7 +36,7 @@ class KeyPointAnnotator(DataAnnotator):
             # Clean response and parse JSON
             response_text = response.strip().replace("```json", "").replace("```", "")
             result = json.loads(response_text)
-            return result["key_points"]
+            return {"key_points": result["key_points"]}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {response_text}")
-            return {["error"]}
+            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            return {"key_points": ["error"]}

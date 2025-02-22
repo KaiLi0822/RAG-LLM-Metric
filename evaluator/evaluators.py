@@ -7,6 +7,7 @@ from sentence_transformers import SentenceTransformer, util
 
 from utils.llm import LLMClient
 from utils.constants import RAGBENCH_COL_NAMES
+from bert_score import score as bert_score
 
 
 # TODO: add AnswerEquivalenceEvaluatorWithBert
@@ -172,6 +173,60 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
 
         return {'refusal_result': score1, "underspecifie_check_score": score2}
 
+
+class BERTScoreEvaluator(RAGEvaluator):
+    """
+    Computes BERTScore between the generated answer and the ground-truth answer.
+    Paper: BERTScore: Evaluating Text Generation with BERT, https://arxiv.org/abs/1904.09675
+    """
+
+    def __init__(self, model_name: str = "bert-base-uncased"):
+        """
+        Args:
+            model_name: The pretrained model name to use for BERTScore.
+        """
+        super().__init__()
+        self.model_name = model_name
+
+    def pre_process_row(self, row: Dict) -> Dict:
+        pass
+
+    async def a_call_llm(self, processed: Dict) -> Dict:
+        pass
+
+    def post_process_row(self, processed: Dict, row: Dict) -> Dict:
+        pass
+
+    def pre_process(self, question, context, answer, **kwargs):
+        # No actual prompt needed.
+        pass
+
+    def call_llm(self, processed_data: Any) -> str:
+        # Not calling an LLM.
+        pass
+
+    def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
+        # Not parsing any LLM JSON output.
+        pass
+
+    def evaluate(self, question, context, answer, **kwargs) -> Dict[str, float]:
+        """
+        Perform the main logic of computing BERTScore.
+        """
+        # 1. Validate that 'golden_answer' is provided
+        if "golden_answer" not in kwargs:
+            raise KeyError("BERTScoreEvaluator requires 'golden_answer' in kwargs.")
+        golden_answer = kwargs["golden_answer"]
+
+        # 2. Compute BERTScore
+        P, R, F1 = bert_score([answer], [golden_answer], model_type=self.model_name)
+
+        # 3. Return the final score dict
+        return {
+            "precision": P.mean().item(),
+            "recall": R.mean().item(),
+            "f1": F1.mean().item()
+        }
 
 class LearningFacilitationEvaluator(RAGEvaluator):
 

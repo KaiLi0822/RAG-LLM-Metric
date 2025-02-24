@@ -6,10 +6,13 @@ from evaluator.prompt_manager import EvaluationType, EvalPromptManager
 from sentence_transformers import SentenceTransformer, util
 
 from utils.llm import LLMClient
+<<<<<<< HEAD
 from utils.constants import RAGBENCH_COL_NAMES
 from bert_score import score as bert_score
+=======
 from utils.constants import RAGBENCH_COL_NAMES, LLM_RESPONSE, PROMPT, EVAL_COL_MAP
 import os
+>>>>>>> bbf669256e0488173c0a49a1d972ad786bb9341f
 
 
 # TODO: add AnswerEquivalenceEvaluatorWithBert

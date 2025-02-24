@@ -1,10 +1,15 @@
+from __future__ import annotations
 import asyncio
 from typing import List, Dict, Optional
 from concurrent.futures import ProcessPoolExecutor
 from datasets import Dataset, DatasetDict, load_dataset
 from data_annotator.base_annotator import DataAnnotator
 from evaluator.base_evaluator import RAGEvaluator
-from data_annotator.annotators import KeyPointAnnotator
+from data_annotator.annotators import (
+    KeyPointAnnotator,
+    NumMistakesAnnotator,
+    MistakeAnswerGenerator,
+)
 import os
 
 
@@ -22,7 +27,11 @@ def detect_splits(dataset: DatasetDict) -> List[str]:
 
 
 class Executor:
-    def __init__(self, processor_class: type[DataAnnotator] | type[RAGEvaluator], num_workers: int = os.cpu_count()):
+    def __init__(
+        self,
+        processor_class: type[DataAnnotator] | type[RAGEvaluator],
+        num_workers: int = os.cpu_count(),
+    ):
         self.processor_class = processor_class
         self.num_workers = num_workers
 
@@ -51,32 +60,41 @@ class Executor:
         return DatasetDict(processed_splits)
 
     @staticmethod
-    def _process_split(processor_class: type[DataAnnotator] | type[RAGEvaluator], split_data: Dataset, kwargs):
+    def _process_split(
+        processor_class: type[DataAnnotator] | type[RAGEvaluator],
+        split_data: Dataset,
+        kwargs,
+    ):
         """Instantiate inside worker process"""
-        annotator = processor_class(**kwargs)  # Create instance here
-        processed = asyncio.run(annotator.process_split(split_data))
+        processor = processor_class(**kwargs)  # Create instance here
+        processed = asyncio.run(processor.process_split(split_data))
         for col_name, list_data in processed.items():
             split_data = split_data.add_column(col_name, list_data)
         return split_data
 
 
 class ExecutionPipeline:
-    def __init__(self, processor_classes: List[type[DataAnnotator] | type[RAGEvaluator]]):
+    def __init__(
+        self, processor_classes: List[type[DataAnnotator] | type[RAGEvaluator]]
+    ):
         self.processor_classes = processor_classes
         self.executors = [Executor(cls) for cls in processor_classes]
 
-    async def run_pipeline(self, dataset_name: str, save_path: str, upload_to_hub: bool = False,
-                           repo_id: Optional[str] = None, **kwargs) -> DatasetDict:
+    async def run_pipeline(
+        self,
+        dataset_name: str,
+        save_path: str,
+        upload_to_hub: bool = False,
+        repo_id: Optional[str] = None,
+        **kwargs
+    ) -> DatasetDict:
         # Load initial dataset
         initial_dataset = load_data(dataset_name)
         current_dataset = initial_dataset
 
         # Create fresh instances in executor processes
         for _cls, executor in zip(self.processor_classes, self.executors):
-            current_dataset = await executor.run(
-                dataset=current_dataset,
-                **kwargs
-            )
+            current_dataset = await executor.run(dataset=current_dataset, **kwargs)
 
         current_dataset.save_to_disk(save_path)
 
@@ -88,3 +106,26 @@ class ExecutionPipeline:
             current_dataset.push_to_hub(repo_id=repo_id, token=os.getenv("HF_TOKEN"))
 
         return current_dataset
+
+
+class SyntheticAnswerGenerationPipeline:
+    def __init__(self, mistakes: List[str]):
+        self.mistakes = mistakes
+
+    async def run_pipeline(
+        self,
+        dataset_name: str,
+        save_path: str = None,
+        upload_to_hub: bool = False,
+        repo_id: str = None,
+    ):
+        pipeline = ExecutionPipeline(
+            processor_classes=[NumMistakesAnnotator, MistakeAnswerGenerator]
+        )
+        await pipeline.run_pipeline(
+            dataset_name=dataset_name,
+            save_path=save_path,
+            upload_to_hub=upload_to_hub,
+            repo_id=repo_id,
+            mistakes=self.mistakes,
+        )

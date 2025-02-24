@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 
 from utils.base import BasePrompt
@@ -62,7 +63,63 @@ Example:\n
 "Example:\n"
 "```json\n"
 '{"TF": "TRUE"}'
-"```" """,
+```" """,
+    }
+
+    HAS_NUMERIC_INFO = {
+        "template": (
+            "Your task is to follow the criteria described then give the answer based on given ground truth answer of a question."
+            "Question:{question}\nGround Truth Answer:{golden_answer}\n Criteria: {criteria}\n\n{formatter}"
+            ),
+        "criteria": ("Analyze the provided question and its corresponding ground truth answer. "
+                     "Determine whether the answer critically relies on numerical information, quantifiers, or number-related elements (e.g., ordinals, cardinals, percentages, dates, measurements, counts, ranges, or mathematical values). "
+                     "Focus on whether the answer would be incomplete, ambiguous, or incorrect if numerical components were removed."
+                     ),
+        "formatter": """Respond ONLY with a JSON object containing:\n
+- has_numeric_info (string of 'true' or 'false')
+"Example:\n"
+"```json\n"
+'{"has_numeric_info": "true"}'
+```" """,
+    }
+
+    MISTAKE_GENERATION = {
+        "template": """Your task is to generate two versions of an answer based on the ground truth:
+        - A perfect paraphrase maintaining all details
+        - An incorrect version with specific errors
+    
+        Ground Truth Answer: {golden_answer}
+        Context: {context}
+    
+        Follow these criteria:
+        {criteria_result}
+    
+        {formatter}""",
+
+        "criteria": lambda mistakes: (
+            "First, create a PERFECT PARAPHRASE that:\n"
+            "- Preserves all information exactly\n"
+            "- Changes only wording/structure\n\n"
+            "Then create an INCORRECT VERSION that:\n"
+            f"{mistakes}\n"
+            "- Clearly shows the specified error types\n"
+            "- Maintains grammatical correctness\n"
+            "- Do not put multiple mistake into one sentence\n"
+        ),
+
+        "formatter": """Respond STRICTLY with JSON containing:
+    - "Paraphrased" (exact-meaning version)
+    - "Incorrect" (error-containing version) 
+    - "Error_Locations" (sentence numbers as list)
+    
+    Example:
+    ```json
+    {
+        "Paraphrased": "The cardiac cycle consists of systole and diastole phases...",
+        "Incorrect": "The cardiac cycle contains systolic and diastolic phases...",
+        "Error_Locations": [1, 3]
+    }
+    ```"""
     }
 
 
@@ -73,12 +130,12 @@ class AnnotatePromptManager:
         self.default_type = default_type
 
     def build_prompt(
-        self,
-        answer: str = None,
-        question: str = None,
-        context: str = None,
-        eval_type: AnnotationType = None,
-        **kwargs
+            self,
+            answer: str = None,
+            question: str = None,
+            context: str = None,
+            eval_type: AnnotationType = None,
+            **kwargs
     ) -> str:
         """
         Construct an evaluation prompt with JSON formatting instructions

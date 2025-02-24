@@ -78,8 +78,8 @@ Example:\n
         "formatter": """Respond ONLY with a JSON object containing:\n
 - has_numeric_info (string of 'true' or 'false')
 "Example:\n"
-"```json\n"
-'{"has_numeric_info": "true"}'
+"```json
+{"has_numeric_info": "true"}
 ```" """,
     }
 
@@ -112,14 +112,14 @@ Example:\n
     - "Incorrect" (error-containing version) 
     - "Error_Locations" (sentence numbers as list)
     
-    Example:
-    ```json
+    "Example:\n"
+    "```json
     {
         "Paraphrased": "The cardiac cycle consists of systole and diastole phases...",
         "Incorrect": "The cardiac cycle contains systolic and diastolic phases...",
         "Error_Locations": [1, 3]
     }
-    ```"""
+    ```" """
     }
 
 

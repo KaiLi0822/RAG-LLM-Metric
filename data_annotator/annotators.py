@@ -90,14 +90,14 @@ class MistakeDistributionAnnotator(DataAnnotator):
     def post_process(self, processed: Dict, row: Dict) -> Dict:
         try:
             # Clean response and parse JSON
-            response_text = processed[LLM_RESPONSE].strip().replace("```json", "").replace("```", "")
+            response_text = processed[LLM_RESPONSE].strip().replace("```json", "").replace("```", "").replace("\'", '"').strip('\"\\n ').replace('\\\\"', '"')
             result = json.loads(response_text)
             if result["has_numeric_info"].lower() == 'true':
                 return {"mistake_distribution": self._distribute(True, row)}
             else:
                 return {"mistake_distribution": self._distribute(False, row)}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            print(f"Error parsing LLM response: {response_text}")
             return {"mistake_distribution": self._distribute(False, row)}
 
     def _distribute(self, has_numeric: bool, row: Dict) -> List:
@@ -162,7 +162,7 @@ class MistakeAnswerGenerator(DataAnnotator):
                     "Incorrect": result["Incorrect"],
                     "Error_Locations": result["Error_Locations"]}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            print(f"Error parsing LLM response: {response_text}")
             return {"Paraphrased": None,
                     "Incorrect": None,
                     "Error_Locations": []}

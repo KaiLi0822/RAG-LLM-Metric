@@ -10,6 +10,7 @@ EVAL_COL_MAP = {
     "Correct": "Paraphrased",
     "Incorrect": "Incorrect",
     "gold": "generated_answer",
+    "ground_truth": "response"
 }
 
 class RAGBENCH_COL_NAMES(Enum):

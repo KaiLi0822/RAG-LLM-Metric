@@ -9,6 +9,8 @@ from utils.constants import RAGBENCH_COL_NAMES, LLM_RESPONSE, PROMPT, SYNTHETIC_
 from utils.llm import LLMClient
 
 import numpy as np
+import logging
+logger = logging.getLogger(__name__)
 
 
 class KeyPointAnnotator(DataAnnotator):
@@ -43,7 +45,7 @@ class KeyPointAnnotator(DataAnnotator):
             result = json.loads(response_text)
             return {"key_points": result["key_points"]}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            logger.info(f"Error parsing LLM response for row{row['id']}: {response_text}")
             return {"key_points": ["error"]}
 
 
@@ -97,7 +99,7 @@ class MistakeDistributionAnnotator(DataAnnotator):
             else:
                 return {"mistake_distribution": self._distribute(False, row)}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            logger.info(f"Error parsing LLM response for row{row['id']}: {response_text}")
             return {"mistake_distribution": self._distribute(False, row)}
 
     def _distribute(self, has_numeric: bool, row: Dict) -> List:
@@ -162,7 +164,7 @@ class MistakeAnswerGenerator(DataAnnotator):
                     "Incorrect": result["Incorrect"],
                     "Error_Locations": result["Error_Locations"]}
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            logger.info(f"Error parsing LLM response for row{row['id']}: {response_text}")
             return {"Paraphrased": None,
                     "Incorrect": None,
                     "Error_Locations": []}

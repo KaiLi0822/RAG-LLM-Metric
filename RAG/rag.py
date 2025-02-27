@@ -4,6 +4,8 @@ from retriever import RetrieverManager, RetrieverType
 from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig
 from sentence_transformers import SentenceTransformer
 from .llm.llm import BaseLLM, DeepSeekLLM, QwenLLM
+import logging
+logger = logging.getLogger(__name__)
 
 class RAGPipeline:
     """Orchestrates the end-to-end RAG process"""
@@ -85,4 +87,4 @@ if __name__ == "__main__":
         temperature=0.7,
         do_sample=True
     )
-    print(response)
+    logger.info(response)

@@ -176,3 +176,5 @@ j/
 poetry.lock
 /**/tmp_data
 
+log/
+.vscode/

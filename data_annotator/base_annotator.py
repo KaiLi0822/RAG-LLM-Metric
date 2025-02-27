@@ -5,6 +5,8 @@ from typing import Dict, List, Optional
 from datasets import Dataset
 from utils.llm import LLMClient, OpenAIClientLLM
 from data_annotator.prompt_manager import AnnotatePromptManager
+import logging
+logger = logging.getLogger(__name__)
 
 
 class DataAnnotator(ABC):

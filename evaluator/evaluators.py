@@ -3,13 +3,18 @@ import json
 from typing import List, Dict, Union, Any
 from evaluator.base_evaluator import RAGEvaluator
 from evaluator.prompt_manager import EvaluationType, EvalPromptManager
-from sentence_transformers import SentenceTransformer, util
+try:
+    from sentence_transformers import SentenceTransformer, util
+    from bert_score import score as bert_score
+except ImportError as e:
+    print(f"Error: {e}")
 
 from utils.llm import LLMClient
 from utils.constants import RAGBENCH_COL_NAMES
-from bert_score import score as bert_score
 from utils.constants import RAGBENCH_COL_NAMES, LLM_RESPONSE, PROMPT, EVAL_COL_MAP
 import os
+import logging
+logger = logging.getLogger(__name__)
 
 
 # TODO: add AnswerEquivalenceEvaluatorWithBert
@@ -171,7 +176,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
                 "reason": result1['reason']
             }
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response on refusal: {response_text}")
+            logger.info(f"Error parsing LLM response on refusal: {response_text}")
             score1 = {'refusal': 0xffffffff, "error": str(e)}
 
         try:
@@ -183,7 +188,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
                 "reason": result2['reason']
             }
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response on refusal: {response_text}")
+            logger.info(f"Error parsing LLM response on refusal: {response_text}")
             score1 = {'underspecifie_check': 0, "error": str(e)}
 
         return {'refusal_result': score1, "underspecifie_check_score": score2}
@@ -282,6 +287,7 @@ class LearningFacilitationEvaluator(RAGEvaluator):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+            
     def pre_process_row(self, row: Dict) -> Dict:
         return {PROMPT: self.pre_process(
             question=row[RAGBENCH_COL_NAMES.QUESTION.value],
@@ -321,7 +327,7 @@ class LearningFacilitationEvaluator(RAGEvaluator):
     def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
         """Parse JSON response into scores dictionary"""
         try:
-            print(f"Raw LLM response: {llm_response}")
+            logger.info(f"Raw LLM response: {llm_response}")
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
 
@@ -335,7 +341,7 @@ class LearningFacilitationEvaluator(RAGEvaluator):
             return scores
 
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {response_text}")
+            logger.info(f"Error parsing LLM response: {response_text}")
             return {
                 "learning_facilitation_score": -1,
                 "educational_strengths": [],
@@ -396,7 +402,7 @@ class EngagementEvaluator(RAGEvaluator):
     def post_process(self, llm_response: str, **kwargs) -> Dict[str, Union[float, List[str]]]:
         """Parse JSON response into scores dictionary"""
         try:
-            print(f"Raw LLM response: {llm_response}")
+            logger.info(f"Raw LLM response: {llm_response}")
             # Clean response and parse JSON
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
@@ -411,7 +417,7 @@ class EngagementEvaluator(RAGEvaluator):
             return scores
 
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {llm_response}")
+            logger.info(f"Error parsing LLM response: {llm_response}")
             return {
                 "engagement_score": -1,
                 "engaging_elements": [],
@@ -481,7 +487,7 @@ class ContextRelevanceEvaluator(RAGEvaluator):
             }
             return score
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {response_text}")
+            logger.info(f"Error parsing LLM response: {response_text}")
             return {
                 "relevance_score": -1,
                 'error': str(e)
@@ -560,7 +566,7 @@ class FactualCorrectnessEvaluator(RAGEvaluator):
 
             return scores
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {response_text}")
+            logger.info(f"Error parsing LLM response: {response_text}")
             return {
                 "TP": -1, "FP": -1, "FN": -1, "F1_SCORE": -1,
                 'error': str(e)
@@ -711,7 +717,7 @@ class KeyPointEvaluator(RAGEvaluator):
             return scores
 
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {llm_response}")
+            logger.info(f"Error parsing LLM response: {llm_response}")
             return {
                 "completeness_score": -1,
                 "irrelevant_score": -1,
@@ -853,13 +859,13 @@ class ContextUtilizationEvaluator(RAGEvaluator):
     def post_process(self, llm_response, **kwargs):
         assert "context" in kwargs, f"Missing context"
         try:
-            print(f"Raw LLM response: {llm_response}")
+            logger.info(f"Raw LLM response: {llm_response}")
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
 
             context = kwargs['context']
 
-            print(f"Context: {context}")
+            logger.info(f"Context: {context}")
             relevant_context = result.get("relevant_context", [])
             # irrelevant_context = result.get("irrelevant_context", [])
 
@@ -868,7 +874,7 @@ class ContextUtilizationEvaluator(RAGEvaluator):
             context_utilization_score = relevant_count / total_context if total_context > 0 else 0
             return context_utilization_score
         except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing LLM response: {llm_response}")
+            logger.info(f"Error parsing LLM response: {llm_response}")
             return {
                 "context_utilization_score": -1,
                 'error': str(e)

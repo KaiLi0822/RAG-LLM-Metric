@@ -10,10 +10,12 @@ from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline, Generati
 from huggingface_hub import login
 import torch
 import time
+import logging
+logger = logging.getLogger(__name__)
 try:
     from vllm import LLM, SamplingParams
 except ImportError:
-    print("vllm is not installed, Please install vllm to use fast inference feature.")
+    logger.info("vllm is not installed, Please install vllm to use fast inference feature.")
 
 class LLMClient(ABC):
     """Base class for LLM clients with standardized invocation interface"""
@@ -258,7 +260,7 @@ class HFClientVLLM(LLMClient):
         
         # End timing
         elapsed_time = time.time() - start_time
-        print(f"vLLM optimized inference time: {elapsed_time:.2f} seconds")
+        logger.info(f"vLLM optimized inference time: {elapsed_time:.2f} seconds")
         
         # Extract and clean response
         assistant_response = outputs[0].outputs[0].text.strip()
@@ -346,7 +348,7 @@ class HFClient(LLMClient):
         # End time counting after generation
         end_time = time.time()
         elapsed_time = end_time - start_time
-        print(f"Inference time: {elapsed_time:.2f} seconds")
+        logger.info(f"Inference time: {elapsed_time:.2f} seconds")
         
         # Decode the complete generated text
         generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
@@ -376,8 +378,8 @@ if __name__ == "__main__":
 
     # OpenAI client example
     openai_llm = OpenAIClientLLM()
-    print("OpenAI response:", openai_llm.generate("Hello world!"))
+    logger.info("OpenAI response:", openai_llm.generate("Hello world!"))
     
     # HTTP client example
     http_llm = HTTPLLM()
-    print("HTTP response:", http_llm.generate("Explain quantum computing in 3 sentences"))
+    logger.info("HTTP response:", http_llm.generate("Explain quantum computing in 3 sentences"))

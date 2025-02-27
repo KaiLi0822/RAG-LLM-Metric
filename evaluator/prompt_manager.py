@@ -2,6 +2,8 @@ from __future__ import annotations
 from enum import Enum, auto
 from typing import Dict, Any
 from utils.base import BasePrompt
+import logging
+logger = logging.getLogger(__name__)
 
 class EvaluationType(BasePrompt):
     """Enumeration of different evaluation prompt types with JSON formatting"""
@@ -452,5 +454,5 @@ if __name__ == "__main__":
         eval_type=EvaluationType.RELEVANCE
     )
     
-    print("Relevance Evaluation Prompt:")
-    print(prompt)
+    logger.info("Relevance Evaluation Prompt:")
+    logger.info(prompt)

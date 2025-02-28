@@ -885,3 +885,124 @@ class ContextUtilizationEvaluator(RAGEvaluator):
         processed_data = self.pre_process(question, context, answer, **kwargs)
         llm_response = self.call_llm(processed_data)
         return self.post_process(llm_response, context=self.context if hasattr(self, "context") else [])
+
+
+
+class CoherenceEvaluator(RAGEvaluator):
+    def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
+        super().__init__(llm_class, **llm_kwargs)
+        self.EVAL_COLUMNS = ["coherence_score", "strengths", "weaknesses"]
+        assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
+        self.answer_column = os.getenv("ANSWER_TYPE")
+        self.EVAL_SCORE_PREFIX = "COHERENCE"
+        if self.EVAL_SCORE_PREFIX:
+            self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
+        else:
+            self.EVAL_SCORE_PREFIX = self.answer_column
+    def pre_process_row(self, row: Dict) -> Dict:
+        assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
+        return {PROMPT: self.pre_process(
+            question=row[RAGBENCH_COL_NAMES.QUESTION.value],
+            context=row[RAGBENCH_COL_NAMES.CONTEXT.value],
+            answer=row[EVAL_COL_MAP[self.answer_column]],  
+        )}
+
+    async def a_call_llm(self, processed: Dict) -> Dict:
+        assert PROMPT in processed, f'Prompt missing'
+        processed[LLM_RESPONSE] = await self.llm.a_generate(processed[PROMPT])
+        return processed
+
+    def post_process_row(self, processed: Dict, row: Dict) -> Dict:
+        result = self.post_process(processed[LLM_RESPONSE])
+        try:
+            return {f"{self.EVAL_SCORE_PREFIX}_{key}": result[key] for key in self.EVAL_COLUMNS}
+        except KeyError:
+            return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS} 
+      
+
+    def pre_process(
+            self, question: str | List[str], context: str | List[str], answer: str | List[str], **kwargs
+    ) -> str:
+        return EvalPromptManager().build_prompt(
+            question=question,
+            context=context,
+            answer=answer,
+            eval_type=EvaluationType.COHERENCE
+        )
+
+    def call_llm(self, processed_data: str) -> str:
+        return self.llm.generate(processed_data)
+    
+    def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
+        try:
+            response_text = llm_response.strip().replace('```json', '').replace('```', '')
+            result = json.loads(response_text)
+            return {
+                "coherence_score": result['coherence_score'],
+                "strengths": result['strengths'],
+                "weaknesses": result['weaknesses']
+            }
+        except (json.JSONDecodeError, KeyError) as e:
+            return {
+                "error": str(e)
+            }
+
+
+class FactualAccuracyEvaluator(RAGEvaluator):
+    def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
+        super().__init__(llm_class, **llm_kwargs)
+        self.EVAL_COLUMNS = ["accuracy_score", "supported_claims", "unsupported_claims"]
+        assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
+        self.answer_column = os.getenv("ANSWER_TYPE")
+        self.EVAL_SCORE_PREFIX = "FACTUAL_ACCURACY"
+        if self.EVAL_SCORE_PREFIX:
+            self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
+        else:
+            self.EVAL_SCORE_PREFIX = self.answer_column
+    
+    def pre_process_row(self, row: Dict) -> Dict:
+        assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
+        return {PROMPT: self.pre_process(
+            context=row[RAGBENCH_COL_NAMES.CONTEXT.value],
+            answer=row[EVAL_COL_MAP[self.answer_column]]
+        )}
+
+    async def a_call_llm(self, processed: Dict) -> Dict:
+        assert PROMPT in processed, f'Prompt missing'
+        processed[LLM_RESPONSE] = await self.llm.a_generate(processed[PROMPT])
+        return processed
+
+    def post_process_row(self, processed: Dict, row: Dict) -> Dict:
+        result = self.post_process(processed[LLM_RESPONSE])
+        try:
+            return {f"{self.EVAL_SCORE_PREFIX}_{key}": result[key] for key in self.EVAL_COLUMNS}
+        except KeyError:
+            return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS}
+
+    def pre_process(
+            self, question: str | List[str], context: str | List[str], answer: str | List[str], **kwargs
+    ) -> str:
+        return EvalPromptManager().build_prompt(
+            context=context,
+            answer=answer,
+            eval_type=EvaluationType.FACTUAL_ACCURACY
+        )
+
+    def call_llm(self, processed_data: str) -> str:
+        return self.llm.generate(processed_data)
+    
+    def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
+        try:
+            response_text = llm_response.strip().replace('```json', '').replace('```', '')
+            result = json.loads(response_text)
+            return {
+                "accuracy_score": result['accuracy_score'],
+                "supported_claims": result['supported_claims'],
+                "unsupported_claims": result['unsupported_claims']
+            }
+        except (json.JSONDecodeError, KeyError) as e:
+            return {
+                "error": str(e)
+            }
+        
+    

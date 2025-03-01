@@ -328,25 +328,20 @@ class LearningFacilitationEvaluator(RAGEvaluator):
         """Parse JSON response into scores dictionary"""
         try:
             logger.info(f"Raw LLM response: {llm_response}")
+            # Clean response and parse JSON
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
 
-            scores = {
-                "learning_facilitation_score": result['learning_facilitation_score'],
-                "educational_strengths": result['educational_strengths'],
-                "areas_for_improvement": result['areas_for_improvement'],
-                "confidence": result['confidence']
-            }
+            # Dynamically construct the scores dictionary
+            scores = {}
+            for key, value in result.items():
+                scores[key] = value
 
             return scores
 
         except (json.JSONDecodeError, KeyError) as e:
-            logger.info(f"Error parsing LLM response: {response_text}")
+            logger.info(f"Error parsing LLM response: {llm_response}")
             return {
-                "learning_facilitation_score": -1,
-                "educational_strengths": [],
-                "areas_for_improvement": [],
-                "confidence": -1,
                 'error': str(e)
             }
 
@@ -407,24 +402,19 @@ class EngagementEvaluator(RAGEvaluator):
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
 
-            scores = {
-                "engagement_score": result.get('engagement_score', -1),
-                "engaging_elements": result.get('engaging_elements', []),
-                "suggestions_for_improvement": result.get('suggestions_for_improvement', []),
-                "confidence": result.get('confidence', -1)
-            }
+            # Dynamically construct the scores dictionary
+            scores = {}
+            for key, value in result.items():
+                scores[key] = value
 
             return scores
 
         except (json.JSONDecodeError, KeyError) as e:
             logger.info(f"Error parsing LLM response: {llm_response}")
             return {
-                "engagement_score": -1,
-                "engaging_elements": [],
-                "suggestions_for_improvement": [],
-                "confidence": -1,
                 'error': str(e)
             }
+
 
 
 class ContextRelevanceEvaluator(RAGEvaluator):
@@ -479,17 +469,21 @@ class ContextRelevanceEvaluator(RAGEvaluator):
     def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
         """Parse JSON response into scores dictionary"""
         try:
+            logger.info(f"Raw LLM response: {llm_response}")
             # Clean response and parse JSON
             response_text = llm_response.strip().replace('```json', '').replace('```', '')
             result = json.loads(response_text)
-            score = {
-                "relevance_score": result['relevance_score']
-            }
-            return score
+
+            # Dynamically construct the scores dictionary
+            scores = {}
+            for key, value in result.items():
+                scores[key] = value
+
+            return scores
+
         except (json.JSONDecodeError, KeyError) as e:
-            logger.info(f"Error parsing LLM response: {response_text}")
+            logger.info(f"Error parsing LLM response: {llm_response}")
             return {
-                "relevance_score": -1,
                 'error': str(e)
             }
 

@@ -9,6 +9,7 @@ class DynamicEvaluationOrchestrator:
         self.base_agents = self._initialize_base_roles()
         self.domain_specialists = self._initialize_domain_roles()
         self.domain_detector = self._create_domain_detector()
+        self.group_chat_summarizer = self._create_group_chat_summarizer()
         self.user_proxy = UserProxyAgent(name="UserProxy", human_input_mode="NEVER")
 
     def _llm_config(self) -> Dict:
@@ -76,6 +77,13 @@ class DynamicEvaluationOrchestrator:
             llm_config=self._llm_config()
         )
 
+    def _create_group_chat_summarizer(self) -> AssistantAgent:
+        return AssistantAgent(
+            name="GroupChatSummarizer",
+            system_message="""Summarize a multi-agent group chat and strictly follows the uer instruction and user required output formatting""",
+            llm_config=self._llm_config()
+        )
+
     def detect_domains(self, criteria: str) -> List[str]:
         self.user_proxy.initiate_chat(
             self.domain_detector,
@@ -119,14 +127,24 @@ class DynamicEvaluationOrchestrator:
 
         group_chat_result = self.user_proxy.initiate_chat(
             manager,
-            message=f"User Criteria: {user_criteria}\n\nGenerate weighted metrics considering all perspectives.",
+            message=(f"User Criteria: {user_criteria}\n\nGenerate weighted metrics considering all perspectives."
+                     "The output format should be list of tuples with metric names and weights"),
             max_turns=1
         )
 
-        return self._parse_final_decision(group_chat_result)
+        return self._parse_final_decision(self._summarize_group_chat(group_chat_result, user_criteria))
 
-    def _parse_final_decision(self, group_chat_result: ChatResult) -> Dict:
-        final_message = group_chat_result.chat_history[0]["content"]
+    def _summarize_group_chat(self, chat_result: ChatResult, user_criteria: str) -> str:
+        transcripts = "\n".join([msg.content for msg in chat_result.messages])
+        self.user_proxy.initiate_chat(
+            self.domain_detector,
+            message=f"given the {user_criteria} summarize the group chat and give a final decision \n GROUP_CHAT: {transcripts}",
+            clear_history=True,
+            max_turns=2,
+        )
+        return self.domain_detector.last_message()["content"]
+
+    def _parse_final_decision(self, final_message: str) -> Dict:
         try:
             metrics = eval(re.search(r"\[.*\]", final_message, re.DOTALL).group())
             return {"metrics": metrics, "rationale": self._extract_rationale(final_message)}

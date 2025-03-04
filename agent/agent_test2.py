@@ -1,4 +1,6 @@
 import importlib
+import json
+
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import MaxMessageTermination
@@ -11,26 +13,27 @@ import re
 import os
 import asyncio
 
-from importlib.metadata.diagnose import inspect
+import inspect
+from importlib.metadata import version, packages_distributions
 from evaluator.base_evaluator import RAGEvaluator
 
 
-def get_evaluator_classes() -> List[type[RAGEvaluator]]:
-    """Retrieve all classes ending with 'evaluators' derived from RagEvaluator."""
-    module = importlib.import_module("evaluator.evaluators")
+def get_evaluator_classes():
+    """Retrieve all implemented evaluators derived from RAGEvaluator."""
+
+    # Get module and class info
+    module = importlib.import_module('evaluator.evaluators')
     evaluator_classes = []
 
     for _, cls in inspect.getmembers(module, inspect.isclass):
-        if (
-            issubclass(cls, RAGEvaluator)
-            and cls.__module__ == module.__name__
-            and cls.__name__.endswith("evaluators")
-            and cls is not RAGEvaluator
-        ):
-
+        if (issubclass(cls, RAGEvaluator) and
+                cls.__module__ == module.__name__ and
+                cls.__name__.endswith('Evaluator') and
+                cls is not RAGEvaluator):
             evaluator_classes.append(cls)
 
     return evaluator_classes
+
 
 class DynamicEvaluationOrchestrator:
     def __init__(self):
@@ -38,6 +41,7 @@ class DynamicEvaluationOrchestrator:
         self.base_agents = self._initialize_base_roles()
         self.domain_specialists = self._initialize_domain_roles()
         self.domain_detector = self._create_domain_detector()
+        self.group_chat_summarizer = self._create_group_chat_summarizer()
         self.user_proxy = UserProxyAgent(name="UserProxy")
         self.evaluator_info = self._get_evaluator_metadata()
         self.metric_map = self._create_metric_map()
@@ -105,6 +109,13 @@ class DynamicEvaluationOrchestrator:
             model_client=self.model_client,
         )
 
+    def _create_group_chat_summarizer(self) -> AssistantAgent:
+        return AssistantAgent(
+            name="GroupChatSummarizer",
+            system_message="""Summarize a multi-agent group chat and strictly follows the uer instruction and user required output formatting""",
+            model_client=self.model_client
+        )
+
     async def detect_domains(self, criteria: str) -> List[str]:
         cancellation_token = CancellationToken()
         response = await self.domain_detector.on_messages(
@@ -145,17 +156,25 @@ class DynamicEvaluationOrchestrator:
             task=f"User Criteria: {user_criteria}\nAvailable Evaluators:\n{evaluator_list}"
         )
         task_result = await Console(stream)
-        final_output = "\n".join([i.messsages[0].content for i in task_result])
-        
-        #TODO: add a group chat summarization and final decision
-        return self._parse_final_decision(final_output)
+
+        return self._parse_final_decision(await self._summarize_group_chat(task_result, user_criteria))
+
+    async def _summarize_group_chat(self, task_result, user_criteria):
+        transcripts = "\n".join([msg.content for msg in task_result.messages])
+        cancellation_token = CancellationToken()
+        response = await self.group_chat_summarizer.on_messages(
+            [TextMessage(
+                content=f"given the {user_criteria} summarize the group chat and give a final decision \n GROUP_CHAT: {transcripts}", source="system")],
+            cancellation_token,
+        )
+        return response.chat_message.content
 
     def _parse_final_decision(self, response: str) -> Dict:
         try:
-            #TODO: refine output decode
-
+            # TODO: refine output decode
+            result_dict = json.loads(response)
             if validation_errors := self._validate_metrics(
-                result_dict.get("metrics", []), result_dict.get("evaluators", [])
+                    result_dict.get("metrics", []), result_dict.get("evaluators", [])
             ):
                 return {"error": "Validation failed", "details": validation_errors}
 
@@ -168,13 +187,13 @@ class DynamicEvaluationOrchestrator:
             return {"error": f"Parsing failed: {str(e)}"}
 
     def _validate_metrics(
-        self, metrics: List[Tuple[str, float]], evaluators: List[str]
+            self, metrics: List[Tuple[str, float]], evaluators: List[str]
     ) -> List[str]:
         errors = []
         total_weight = sum(w for _, w in metrics)
         if abs(total_weight - 1.0) > 0.01:
             errors.append(f"Weights sum to {total_weight:.2f}")
-            
+
         # TODO: metric output format 
         return errors
 

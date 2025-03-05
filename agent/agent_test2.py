@@ -6,14 +6,17 @@ from autogen_agentchat.teams import RoundRobinGroupChat
 from autogen_agentchat.conditions import MaxMessageTermination
 from autogen_agentchat.messages import TextMessage
 from autogen_agentchat.ui import Console
+from autogen_core.tools import FunctionTool
 from autogen_ext.models.openai import OpenAIChatCompletionClient
 from autogen_core import CancellationToken
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 import re
 import os
 import asyncio
 
 import inspect
+
+import pandas as pd
 from evaluator.base_evaluator import RAGEvaluator
 
 
@@ -32,13 +35,29 @@ def get_evaluator_classes():
     return evaluator_classes
 
 
+def get_sample_data():
+    # TODO:
+    raise NotImplementedError
+
+
 class DynamicEvaluationOrchestrator:
-    def __init__(self):
+
+    def __init__(self,
+                 dataset_name: Optional[str] = None,
+                 dataset_df: Optional[pd.DataFrame] = None, ):
+        if dataset_name is None:
+            self.dataset = []
+        elif dataset_df is None:
+            self.dataset = []
+        else:
+            raise ValueError("must offer dataset by name to HF or a pandas dataframe")
         self.model_client = self._create_model_client()
         self.base_agents = self._initialize_base_roles()
         self.domain_specialists = self._initialize_domain_roles()
         self.domain_detector = self._create_domain_detector()
+        self.example_double_checker = self._create_example_double_checker()
         self.group_chat_summarizer = self._create_group_chat_summarizer()
+        self.read_data_tool = self._create_read_data_tool()
         self.user_proxy = UserProxyAgent(name="UserProxy")
         self.evaluator_info = self._get_evaluator_metadata()
         self.metric_map = self._create_metric_map()
@@ -124,6 +143,21 @@ class DynamicEvaluationOrchestrator:
             model_client=self.model_client
         )
 
+    def _create_example_double_checker(self) -> AssistantAgent:
+        return AssistantAgent(
+            name="ExampleDoubleChecker",
+            system_message="""You are a helpful AI assistant. Solve tasks using your tools. Your task is to retrieve 
+            examples from the evaluation dataset, analyze why the "golden answer" in each example is effective, 
+            and validate whether the previously proposed evaluation metrics/importance weights are suitable.""",
+            tools=[self.read_data_tool],
+            model_client=self.model_client
+        )
+
+    def _create_read_data_tool(self) -> FunctionTool:
+         return FunctionTool(
+            get_sample_data, description="reterive data from user's dataset"
+        )
+
     async def detect_domains(self, criteria: str) -> List[str]:
         cancellation_token = CancellationToken()
         response = await self.domain_detector.on_messages(
@@ -148,10 +182,10 @@ class DynamicEvaluationOrchestrator:
     async def negotiate_metrics(self, user_criteria: str) -> Dict:
         domains = await self.detect_domains(user_criteria)
         domain_agents = self.select_domain_agents(domains)
-        all_agents = list(self.base_agents.values()) + domain_agents
+        all_agents = list(self.base_agents.values()) + domain_agents + [self.example_double_checker]
 
         evaluator_list = "\n".join(
-            [f"- {e['name']} ({e['class_name']}): {e['description']}" 
+            [f"- {e['name']} ({e['class_name']}): {e['description']}"
              for e in self.evaluator_info]
         )
 
@@ -188,7 +222,7 @@ class DynamicEvaluationOrchestrator:
         cancellation_token = CancellationToken()
         response = await self.group_chat_summarizer.on_messages(
             [TextMessage(
-                content=f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final decision\nGROUP_CHAT: {transcripts}", 
+                content=f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final decision\nGROUP_CHAT: {transcripts}",
                 source="system")],
             cancellation_token,
         )
@@ -199,21 +233,21 @@ class DynamicEvaluationOrchestrator:
             # TODO: refine output decode
             result_dict = json.loads(response)
             evaluator_data = result_dict.get("evaluators", [])
-            
+
             evaluator_classes = {cls.__name__: cls for cls in get_evaluator_classes()}
             evaluator_tuples = []
-            
+
             for item in evaluator_data:
                 cls_name = item.get("evaluator")
                 weight = item.get("weight")
                 if cls := evaluator_classes.get(cls_name):
                     evaluator_tuples.append((cls, float(weight)))
-            
+
             if validation_errors := self._validate_metrics(evaluator_tuples):
                 return {"error": "Validation failed", "details": validation_errors}
-            
+
             self.process_final_decision(evaluator_tuples)
-            
+
             return {
                 "evaluators": [(cls.__name__, weight) for cls, weight in evaluator_tuples],
                 "rationale": self._extract_rationale(response),
@@ -227,11 +261,11 @@ class DynamicEvaluationOrchestrator:
         total_weight = sum(w for _, w in evaluators)
         if abs(total_weight - 1.0) > 0.01:
             errors.append(f"Invalid weights sum: {total_weight:.2f} (must sum to 1.0)")
-            
+
         for cls, weight in evaluators:
             if not (0 <= weight <= 1):
                 errors.append(f"Invalid weight {weight:.2f} for {cls.__name__}")
-                
+
         return errors
 
     def _extract_rationale(self, text: str) -> str:

@@ -42,7 +42,7 @@ async def main():
     pipeline = ExecutionPipeline([NumMistakesAnnotator, MistakeDistributionAnnotator, MistakeAnswerGenerator])
     await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
                                 repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake",
-                                llm_class=OpenAIClientLLM)
+                                llm_class=OpenAIClientLLM, )
 
     eval_pipeline = ExecutionPipeline([FactualCorrectnessEvaluator])
     await eval_pipeline.run_pipeline(dataset_name="RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake",

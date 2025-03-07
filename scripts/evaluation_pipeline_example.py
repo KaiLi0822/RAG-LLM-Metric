@@ -26,14 +26,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake"
+DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_delucionqa_100row"
 
 from evaluator.evaluators import KeyPointEvaluator, LearningFacilitationEvaluator, BERTScoreEvaluator
 
 async def main():
     logger.info("Start processing pipeline")
-    pipeline = ExecutionPipeline([BERTScoreEvaluator])
+    pipeline = ExecutionPipeline([LearningFacilitationEvaluator])
     await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
-                                repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_evaluated")
+                                repo_id="RAGEVALUATION-HJKMY/ragbench_delucionqa_100row")
 if __name__ == "__main__":
     asyncio.run(main())

@@ -2,10 +2,11 @@ import asyncio
 import sys
 sys.path.append("..")
 
-from execution_pipeline.execution_pipeline import *
+from execution_pipeline.execution_pipeline import ExecutionPipeline
 
 from dotenv import load_dotenv
 load_dotenv()
+
 
 import logging
 import os
@@ -25,15 +26,17 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake_w_keypoints"  
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake"
+DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_delucionqa_400row_mistake_added"
+OUTPUT_NAME = "RAGEVALUATION-HJKMY/Mistral_ragbench_delucionqa_400row_mistake_added-1"
 
-from data_annotator.annotators import KeyPointAnnotator
+from evaluator.evaluators import *
 
 async def main():
     logger.info("Start processing pipeline")
-    pipeline = ExecutionPipeline([KeyPointAnnotator])
-    await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
-                                repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_annotated")
+    pipeline = ExecutionPipeline([RefusalAccuracyEvaluator, AnswerSimilarityEvaluator, FactualAccuracyEvaluator])
+    res = await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
+                                      repo_id=OUTPUT_NAME,
+                                      model = "mistralai/Ministral-8B-Instruct-2410", base_url = "http://127.0.0.1:30000/v1")
+    print(res)
 if __name__ == "__main__":
     asyncio.run(main())

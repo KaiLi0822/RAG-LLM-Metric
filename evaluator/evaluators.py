@@ -86,9 +86,7 @@ class AnswerEquivalenceEvaluator(RAGEvaluator):
             result = json.loads(response_text)
 
             def get_score(result):
-                if result['Q1'] == 'no':
-                    return 1
-                elif result['Q2'] == 'yes':
+                if result['Q1'] == 'no' and result['Q2'] == 'yes' and result['Q3'] == 'no' and result['Q4'] == 'no':
                     return 1
                 return 0
 

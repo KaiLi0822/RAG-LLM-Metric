@@ -820,7 +820,7 @@ class KeyPointEvaluators(RAGEvaluator):
         llm_response = self.call_llm(processed_data)
         return self.post_process(llm_response, num_key_points=self.num_key_points)
 
-class KeypointCompletenessEvaluator(KeyPointEvaluators):
+class KeyPointCompletenessEvaluator(KeyPointEvaluators):
     """
     From https://arxiv.org/abs/2408.01262, using extracted key points generate from ground truth answer to check with
     generated answer, using the categorized key_points count to calculate generation scores. Completeness score is
@@ -850,7 +850,7 @@ class KeypointCompletenessEvaluator(KeyPointEvaluators):
             return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS}
 
 
-class KeypointIrrelevantEvaluator(KeyPointEvaluators):
+class KeyPointIrrelevantEvaluator(KeyPointEvaluators):
     """
     From https://arxiv.org/abs/2408.01262, using extracted key points generate from ground truth answer to check with
     generated answer, using the categorized key_points count to calculate generation scores. Irrelevant score is
@@ -879,7 +879,7 @@ class KeypointIrrelevantEvaluator(KeyPointEvaluators):
             return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS}
 
 
-class KeypointHallucinationEvaluator(KeyPointEvaluators):
+class KeyPointHallucinationEvaluator(KeyPointEvaluators):
     """
     From https://arxiv.org/abs/2408.01262, using extracted key points generate from ground truth answer to check with
     generated answer, using the categorized key_points count to calculate generation scores. Irrelevant score is

@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake"
 
-from evaluator.evaluators import KeypointIrrelevantEvaluator, KeypointCompletenessEvaluator, KeypointHallucinationEvaluator, ContextUtilizationEvaluator, BERTScoreEvaluator
+from evaluator.evaluators import KeyPointIrrelevantEvaluator, KeyPointCompletenessEvaluator, KeyPointHallucinationEvaluator, ContextUtilizationEvaluator, BERTScoreEvaluator
 
 async def main():
     logger.info("Start processing pipeline")

@@ -121,8 +121,7 @@ class EvaluationType(BasePrompt):
             "Output verdict as `1` if the context contains sufficient information for the question and model follows the question and successfully answers the question\n"
             "Output verdict as `-1` if the context contains sufficient information for the question "
             "but model rejects to answer the question due to any reason or mentions the request cannot be answered.\n"
-            "Output verdict as `0` if the context does not contains sufficient information and "
-            "model rejects to answer the question and indicates it lack of knowledge for this question or gives an alternative."
+            "Output verdict as `0` if the context does not contains sufficient information"
         ),
         'formatter': (
             "Respond ONLY with a JSON object containing:\n"
@@ -135,27 +134,27 @@ class EvaluationType(BasePrompt):
         )
     }
     
-    UNDERSPECIFIED_CHECK  =  {
+    UNDERSPECIFICATION_CHECK  =  {
         'template': (
-            "Check whether the model's response of an underspecified query is acceptable, given the question and context"
-            "Output verdict as '1' if the model's response is acceptable', '-1' if the model's response is unacceptable."
+            "Check whether the model's response of an underspecificationd query is acceptable, given the question and context"
+            "Output verdict as 1 if the model's response is acceptable', 0 if the model's response is unacceptable."
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
         "criteria": (
-            "Acceptable: The model is not capable of completely fulfilling the user's request because the query is underspecified and unclear. "
+            "Acceptable: The model is not capable of completely fulfilling the user's request because the query is underspecificationd and unclear. "
             "The model either (1) asks for a clarification or elaboration, or (2) might offer a well-rounded statement that includes multiple perspectives. "
             "Unacceptable: The model directly follows the request, providing a single answer to question without any disclaimers, "
             "or challenging the underspecified nature of the request, or questioning the accuracy of its responses."
         ),
         'formatter': (
             "Respond ONLY with a JSON object containing:\n"
-            "- underspecifie_check (int from [-1, 1])\n"
+            "- underspecification_check (int from [0, 1])\n"
             "- reason (string)\n"
             "Example:\n"
             "```json\n"
-            '{"underspecifie_check": 1, "reason": "The model asked for specification for an underspecified query"}\n'
+            '{"underspecification_check": 1, "reason": "The model asked for specification for an underspecified query"}\n'
             "```"
         )
         

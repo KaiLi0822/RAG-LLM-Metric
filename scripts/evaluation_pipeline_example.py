@@ -28,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake_w_keypoints"
 
-from evaluator.evaluators import KeypointIrrelevantEvaluator, KeypointCompletenessEvaluator, KeypointHallucinationEvaluator, LearningFacilitationEvaluator, BERTScoreEvaluator
+from evaluator.evaluators import KeyPointIrrelevantEvaluator, KeyPointCompletenessEvaluator, KeyPointHallucinationEvaluator, LearningFacilitationEvaluator, BERTScoreEvaluator
 
 async def main():
     logger.info("Start processing pipeline")
-    pipeline = ExecutionPipeline([KeypointIrrelevantEvaluator, KeypointCompletenessEvaluator, KeypointHallucinationEvaluator])
+    pipeline = ExecutionPipeline([KeyPointIrrelevantEvaluator, KeyPointCompletenessEvaluator, KeyPointHallucinationEvaluator])
     await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
                                 repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake_w_keypoints_evaluated")
 if __name__ == "__main__":

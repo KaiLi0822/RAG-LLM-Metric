@@ -112,7 +112,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
     """
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
         super().__init__(llm_class, **llm_kwargs)
-        self.EVAL_COLUMNS = ["refusal_score", "underspecifie_check_score"]
+        self.EVAL_COLUMNS = ["refusal_accuracy"]
         assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
         self.answer_column = os.getenv("ANSWER_TYPE")
         self.EVAL_SCORE_PREFIX = "refusal_accuracy"

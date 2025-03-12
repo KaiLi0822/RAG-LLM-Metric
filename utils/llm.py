@@ -58,9 +58,9 @@ class OpenAIClientLLM(LLMClient):
     """Concrete implementation using OpenAI-compatible client"""
 
     def __init__(self,
-                 model: str = "meta-llama/Llama-3.3-70B-Instruct",
+                 model = os.getenv("MODEL_ID", "meta-llama/Llama-3.3-70B-Instruct"),
                  system_message: str = "You are a helpful assistant",
-                 base_url: str = os.getenv("BASE_URL"),
+                 base_url = os.getenv("BASE_URL", "https://api-eu.centml.com/openai/v1"),
                  **kwargs):
         """
         Initialize OpenAI-style client

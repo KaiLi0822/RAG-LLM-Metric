@@ -6,7 +6,7 @@ sys.path.append("..")
 
 from evaluator.base_evaluator import RAGEvaluator
 from execution_pipeline.execution_pipeline import ExecutionPipeline
-
+from utils.llm import LocalDeepSeekR1
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,7 +30,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_delucionqa_400row_mistake_added"
-OUTPUT_NAME = "RAGEVALUATION-HJKMY/Mistral8b_ragbench_delucionqa_400row_mistake_added"
+OUTPUT_NAME = "RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_delucionqa_400row_mistake_added"
 
 def get_evaluator_classes():
     """Retrieve all implemented evaluators derived from RAGEvaluator."""
@@ -49,14 +49,14 @@ def get_evaluator_classes():
 CLASSES = get_evaluator_classes()
 logger.fatal(' '.join([i.__name__ for i in CLASSES]))
 
+
 async def main():
     logger.info("Start processing pipeline")
     pipeline = ExecutionPipeline(CLASSES)
-    res = await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data",
-                                      upload_to_hub=True,
-                                      repo_id=OUTPUT_NAME,
-                                      model = "mistralai/Ministral-8B-Instruct-2410",
-                                      base_url = "http://127.0.0.1:30000/v1")
-    print(res)
+    await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data",
+                                upload_to_hub=True, llm_class = LocalDeepSeekR1,
+                                repo_id=OUTPUT_NAME,
+                                model="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+                                base_url="http://0.0.0.0:30000/v1")
 if __name__ == "__main__":
     asyncio.run(main())

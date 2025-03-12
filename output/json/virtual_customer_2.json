@@ -1,0 +1,11 @@
+{
+    "persona": "Persona: Jason\n\nBackground:\nJason is a recent college graduate working as a software developer for a growing fintech company in Austin, Texas. He is passionate about creating innovative applications that improve financial literacy and accessibility for users.\n\nDemographics:\nAge: 23  \nGender: Male  \nEducation: Bachelor's degree in Computer Science  \nProfession: Software Developer  \nIncome: $65,000  \n\nPersonal Characteristics:\nJason is known for his creativity and strong technical skills. He has a curious mind, often experimenting with new programming languages and technologies in his free time. Jason is a team player who enjoys collaborating with others and values diverse perspectives. He is enthusiastic about coding and enjoys sharing his knowledge with fellow developers through online forums and community meetups. Outside of work, Jason is an avid gamer and enjoys hiking on weekends. He prioritizes mental health and wellness, often exploring mindfulness practices to maintain balance in his life.",
+    "age": 23,
+    "age_group": "18-24",
+    "gender": "male",
+    "income": [
+        52500,
+        70000
+    ],
+    "income_group": "52500-70000"
+}

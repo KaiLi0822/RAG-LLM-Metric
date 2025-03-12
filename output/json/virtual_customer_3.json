@@ -1,0 +1,11 @@
+{
+    "persona": "Persona: Ryan\n\nBackground:\nRyan is a recent graduate who has just landed his first job as a software developer at a growing tech firm in Austin, Texas. He is excited about utilizing his programming skills to contribute to innovative software solutions and is eager to learn from his more experienced colleagues.\n\nDemographics:\nAge: 21  \nGender: Male  \nEducation: Bachelor\u2019s degree in Computer Science  \nProfession: Software Developer  \nIncome: $63,000  \n\nPersonal Characteristics:\nRyan is a tech-savvy individual with a passion for coding and problem-solving. He is known for his collaborative spirit and enjoys working in teams to brainstorm ideas and develop projects. Ryan is curious and always on the lookout for the latest trends in technology, attending hackathons and workshops to enhance his skills. Socially, he is friendly and approachable, often organizing group outings with his peers. In his spare time, Ryan enjoys playing video games and contributing to open-source projects, driven by a desire to give back to the community. He values balance in life and makes time for his hobbies alongside his career aspirations.",
+    "age": 21,
+    "age_group": "18-24",
+    "gender": "male",
+    "income": [
+        52500,
+        70000
+    ],
+    "income_group": "52500-70000"
+}

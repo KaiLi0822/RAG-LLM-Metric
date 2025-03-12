@@ -11,6 +11,9 @@ from huggingface_hub import login
 import torch
 import time
 import logging
+import openai
+from openai.types import CreateEmbeddingResponse
+from openai.types.chat import ChatCompletion
 import re
 
 logger = logging.getLogger(__name__)
@@ -19,6 +22,7 @@ try:
 except ImportError:
     logger.info("vllm is not installed, Please install vllm to use fast inference feature.")
 
+client = None
 
 class LLMClient(ABC):
     """Base class for LLM clients with standardized invocation interface"""
@@ -54,9 +58,9 @@ class OpenAIClientLLM(LLMClient):
     """Concrete implementation using OpenAI-compatible client"""
 
     def __init__(self,
-                 model: str = "meta-llama/Llama-3.3-70B-Instruct",
+                 model = os.getenv("MODEL_ID", "meta-llama/Llama-3.3-70B-Instruct"),
                  system_message: str = "You are a helpful assistant",
-                 base_url: str = "https://api-eu.centml.com/openai/v1",
+                 base_url = os.getenv("BASE_URL", "https://api-eu.centml.com/openai/v1"),
                  **kwargs):
         """
         Initialize OpenAI-style client
@@ -420,6 +424,52 @@ class HFClient(LLMClient):
 
     async def a_generate(self, prompt):
         pass
+
+
+
+
+def chat_openai(messages, model, json_mode=False, **kwargs) -> ChatCompletion:
+    try:
+        global client
+        if client is None:
+            client = openai.Client()
+
+        for message in messages:
+            new_contents = []
+            if isinstance(message["content"], str):
+                new_contents.append(
+                    {
+                        "type": "text",
+                        "text": message["content"],
+                    }
+                )
+            elif isinstance(message["content"], list):
+                for content in message["content"]:
+                    if isinstance(content, dict):
+                        if content["type"] == "image":
+                            new_content = {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:{content['source']['media_type']};base64,"
+                                    + content["source"]["data"]
+                                },
+                            }
+                            new_contents.append(new_content)
+                        else:
+                            new_contents.append(content)
+            message["content"] = new_contents
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
+        return (
+            client.chat.completions.create(model=model, messages=messages, **kwargs)
+            .choices[0]
+            .message.content
+        )
+    except Exception as e:
+        print(messages)
+        print(e)
+        raise e
+
 
 
 # Example usage

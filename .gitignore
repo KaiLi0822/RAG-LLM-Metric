@@ -178,3 +178,6 @@ poetry.lock
 
 log/
 .vscode/
+
+# output/
+# config.yml

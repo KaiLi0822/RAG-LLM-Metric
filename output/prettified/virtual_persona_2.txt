@@ -1,0 +1,14 @@
+Persona: Jason
+
+Background:
+Jason is a recent college graduate working as a software developer for a growing fintech company in Austin, Texas. He is passionate about creating innovative applications that improve financial literacy and accessibility for users.
+
+Demographics:
+Age: 23  
+Gender: Male  
+Education: Bachelor's degree in Computer Science  
+Profession: Software Developer  
+Income: $65,000  
+
+Personal Characteristics:
+Jason is known for his creativity and strong technical skills. He has a curious mind, often experimenting with new programming languages and technologies in his free time. Jason is a team player who enjoys collaborating with others and values diverse perspectives. He is enthusiastic about coding and enjoys sharing his knowledge with fellow developers through online forums and community meetups. Outside of work, Jason is an avid gamer and enjoys hiking on weekends. He prioritizes mental health and wellness, often exploring mindfulness practices to maintain balance in his life.

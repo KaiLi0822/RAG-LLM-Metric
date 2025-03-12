@@ -1,0 +1,39 @@
+output_dir: "output"
+queries_file: "queries.txt"
+total_personas: 5
+
+age_groups:
+  "18-24": 40
+  "25-34": 30
+  "35-44": 20
+  "45-54": 10
+
+genders:
+  "male": 50
+  "female": 50
+
+income_groups:
+  "0-17500": 5
+  "17500-35000": 10
+  "35000-52500": 15
+  "52500-70000": 20
+  "70000-87500": 25
+  "87500-105000": 15
+  "105000-122500": 10
+
+
+example_persona: |
+  Persona: Michael
+
+  Background:
+  Michael is a mid-career professional working as a marketing manager at a technology startup in San Francisco. He is passionate about using data-driven strategies to drive growth and innovation for the company.
+
+  Demographics:
+  Age: 42
+  Gender: Male
+  Education: Bachelor's degree in Business Administration
+  Profession: Marketing Manager
+  Income: $75,000
+
+  Personal Characteristics:
+  Michael is known for his analytical mindset and attention to detail. He is a natural problem solver who enjoys tackling complex challenges and finding innovative solutions. Michael is also a strong communicator, able to articulate his ideas clearly and persuasively. He is highly motivated, goal-oriented, and thrives in fast-paced environments. Outside of work, Michael is friendly and approachable, often seen as a mentor by his peers. He values continuous learning and is always seeking opportunities for personal and professional growth.

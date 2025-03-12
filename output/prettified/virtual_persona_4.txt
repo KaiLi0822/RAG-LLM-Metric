@@ -1,0 +1,14 @@
+Persona: Linda
+
+Background:
+Linda is a senior project manager in the construction industry, currently working for a major firm in Atlanta. She has spent over two decades building her career in project management, overseeing large-scale infrastructure projects.
+
+Demographics:
+Age: 50
+Gender: Female
+Education: Master's degree in Civil Engineering
+Profession: Senior Project Manager
+Income: $95,000
+
+Personal Characteristics:
+Linda is known for her leadership skills and her ability to manage diverse teams effectively. She has a strong background in engineering, which allows her to understand the technical aspects of her projects deeply. Linda is organized and detail-oriented, with a knack for timelines and budgets. She is also adept at conflict resolution, often serving as a mediator during challenging situations. Outside of work, Linda enjoys volunteering with local community organizations, fostering a sense of responsibility and connection to her city. She values work-life balance and believes in empowering her team members through mentorship and support.

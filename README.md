@@ -65,3 +65,8 @@ Install SGLang follow the [official document](https://docs.sglang.ai/start/insta
 python3 -m sglang.launch_server --model deepseek-ai/DeepSeek-R1-Distill-Qwen-32B --trust-remote-code
 ```
 
+
+#### generate persona
+```
+python -m persona.persona --config-file config.yml
+```

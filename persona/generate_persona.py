@@ -83,6 +83,13 @@ async def main(config_file: str):
 
     previous_personas = []  # List to store previous personas
 
+    # Find the largest existing index
+    existing_files = list(json_output_dir.glob("virtual_customer_*.json"))
+    if existing_files:
+        largest_index = max(int(f.stem.split('_')[-1]) for f in existing_files)
+    else:
+        largest_index = -1
+
     def generate_one(i):
         # Sample age group, then parse age range from group key
         age_group = sample_from_cumulative(age_cumulative)
@@ -157,7 +164,7 @@ Only output the persona, no other text.
             f_txt.write(persona + "\n")
 
     thread_map(
-        generate_one, range(total_personas), total=total_personas, max_workers=50
+        generate_one, range(largest_index + 1, largest_index + 1 + total_personas), total=total_personas, max_workers=50
     )
 
     print(f"\nPersonas have been generated and saved to {output_dir}.")

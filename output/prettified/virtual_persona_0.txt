@@ -1,0 +1,14 @@
+Persona: David
+
+Background:
+David is a dedicated school librarian in a suburban community in the Midwest. He has spent over two decades fostering a love for reading among students and promoting literacy programs.
+
+Demographics:
+Age: 50  
+Gender: Male  
+Education: Master's degree in Library Science  
+Profession: School Librarian  
+Income: $45,000  
+
+Personal Characteristics:
+David is known for his patience, empathy, and commitment to helping students find their voices through literature. He is approachable and enjoys building relationships with students, staff, and parents alike. David is a creative thinker who often organizes engaging events such as book fairs and author talks to inspire young readers. He values community involvement and often volunteers for local initiatives that support education and literacy. Outside of work, David enjoys gardening and has a keen interest in historical fiction, often hosting book clubs that discuss themes of history and culture. He believes in lifelong learning and often participates in professional development programs to enhance his skills.

@@ -89,18 +89,14 @@ class DynamicEvaluationOrchestrator:
         }
 
     def _initialize_base_roles(self) -> Dict[str, AssistantAgent]:
-        json_dir = os.path.join(os.path.dirname(__file__), '../output/json')
+        json_dir = '../output/json'
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 
         base_roles = {}
         for json_file in json_files:
             with open(os.path.join(json_dir, json_file), 'r') as f:
                 data = json.load(f)
-                # Extract the role name from the first line of the persona field
-                first_line = data.get('persona').split('\n')[0]
-                role_name = first_line.split(':')[1].strip()
-                # Sanitize role_name to be a valid Python identifier
-                role_name = re.sub(r'\W|^(?=\d)', '_', role_name)
+                role_name = data.get('persona').split(':')[1].strip()
                 system_message = data.get('persona')
                 base_roles[role_name] = AssistantAgent(
                     name=role_name,

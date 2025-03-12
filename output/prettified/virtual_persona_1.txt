@@ -1,0 +1,14 @@
+Persona: Aisha
+
+Background:
+Aisha is a project coordinator working for a non-profit organization focused on environmental conservation in Portland, Oregon. She is passionate about sustainable practices and community engagement, often organizing events that promote eco-friendly initiatives.
+
+Demographics:
+Age: 34  
+Gender: Female  
+Education: Master's degree in Environmental Science  
+Profession: Project Coordinator  
+Income: $95,000  
+
+Personal Characteristics:
+Aisha is known for her strong commitment to social causes and her ability to inspire others to take action. She has excellent organizational skills, allowing her to juggle multiple projects effectively. Aisha is an empathetic listener and thrives in collaborative settings, where she builds strong relationships with team members and stakeholders alike. She is creative in her approach to problem-solving and often thinks outside the box to address challenges. Outside of work, Aisha enjoys hiking, experimenting with plant-based cooking, and volunteering in her community, where she advocates for sustainability and environmental awareness.

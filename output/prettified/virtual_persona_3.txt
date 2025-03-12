@@ -1,0 +1,14 @@
+Persona: Ryan
+
+Background:
+Ryan is a recent graduate who has just landed his first job as a software developer at a growing tech firm in Austin, Texas. He is excited about utilizing his programming skills to contribute to innovative software solutions and is eager to learn from his more experienced colleagues.
+
+Demographics:
+Age: 21  
+Gender: Male  
+Education: Bachelor’s degree in Computer Science  
+Profession: Software Developer  
+Income: $63,000  
+
+Personal Characteristics:
+Ryan is a tech-savvy individual with a passion for coding and problem-solving. He is known for his collaborative spirit and enjoys working in teams to brainstorm ideas and develop projects. Ryan is curious and always on the lookout for the latest trends in technology, attending hackathons and workshops to enhance his skills. Socially, he is friendly and approachable, often organizing group outings with his peers. In his spare time, Ryan enjoys playing video games and contributing to open-source projects, driven by a desire to give back to the community. He values balance in life and makes time for his hobbies alongside his career aspirations.

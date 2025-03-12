@@ -1,0 +1,11 @@
+{
+    "persona": "Persona: David\n\nBackground:\nDavid is a dedicated school librarian in a suburban community in the Midwest. He has spent over two decades fostering a love for reading among students and promoting literacy programs.\n\nDemographics:\nAge: 50  \nGender: Male  \nEducation: Master's degree in Library Science  \nProfession: School Librarian  \nIncome: $45,000  \n\nPersonal Characteristics:\nDavid is known for his patience, empathy, and commitment to helping students find their voices through literature. He is approachable and enjoys building relationships with students, staff, and parents alike. David is a creative thinker who often organizes engaging events such as book fairs and author talks to inspire young readers. He values community involvement and often volunteers for local initiatives that support education and literacy. Outside of work, David enjoys gardening and has a keen interest in historical fiction, often hosting book clubs that discuss themes of history and culture. He believes in lifelong learning and often participates in professional development programs to enhance his skills.",
+    "age": 50,
+    "age_group": "45-54",
+    "gender": "male",
+    "income": [
+        35000,
+        52500
+    ],
+    "income_group": "35000-52500"
+}

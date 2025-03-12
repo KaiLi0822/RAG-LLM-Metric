@@ -1,17 +1,13 @@
 from __future__ import annotations
 import asyncio
-from typing import List, Dict, Optional, Union
+from typing import List, Dict, Optional, Union, Tuple
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
 from datasets import Dataset, DatasetDict, load_dataset
 from data_annotator.base_annotator import DataAnnotator
 from evaluator.base_evaluator import RAGEvaluator
-from data_annotator.annotators import (
-    KeyPointAnnotator,
-    NumMistakesAnnotator,
-    MistakeAnswerGenerator,
-)
 import os
+from tqdm import tqdm
 
 
 def load_data(dataset_name: str, config: Optional[str] = None) -> DatasetDict:
@@ -29,9 +25,9 @@ def detect_splits(dataset: DatasetDict) -> List[str]:
 
 class Executor:
     def __init__(
-        self,
-        processor_class: type[DataAnnotator] | type[RAGEvaluator],
-        num_workers: int = os.cpu_count(),
+            self,
+            processor_class: type[DataAnnotator] | type[RAGEvaluator],
+            num_workers: int = os.cpu_count(),
     ):
         self.processor_class = processor_class
         self.num_workers = num_workers
@@ -62,9 +58,9 @@ class Executor:
 
     @staticmethod
     def _process_split(
-        processor_class: type[DataAnnotator] | type[RAGEvaluator],
-        split_data: Dataset,
-        kwargs,
+            processor_class: type[DataAnnotator] | type[RAGEvaluator],
+            split_data: Dataset,
+            kwargs,
     ):
         """Instantiate inside worker process"""
         processor = processor_class(**kwargs)  # Create instance here
@@ -76,19 +72,19 @@ class Executor:
 
 class ExecutionPipeline:
     def __init__(
-        self, processor_classes: List[type[DataAnnotator] | type[RAGEvaluator]]
+            self, processor_classes: List[type[DataAnnotator] | type[RAGEvaluator]]
     ):
         self.processor_classes = processor_classes
         self.executors = [Executor(cls) for cls in processor_classes]
 
     async def run_pipeline(
-        self,
-        dataset_name: Optional[str] = None,
-        dataset_df: Optional[pd.DataFrame] = None,
-        save_path: Optional[str] = None,
-        upload_to_hub: bool = False,
-        repo_id: Optional[str] = None,
-        **kwargs
+            self,
+            dataset_name: Optional[str] = None,
+            dataset_df: Optional[pd.DataFrame] = None,
+            save_path: Optional[str] = None,
+            upload_to_hub: bool = False,
+            repo_id: Optional[str] = None,
+            **kwargs
     ) -> Union[DatasetDict, pd.DataFrame]:
         """Handle both HF datasets and pandas DataFrames"""
         # Load initial dataset
@@ -103,8 +99,12 @@ class ExecutionPipeline:
 
         current_dataset = initial_dataset
 
-        # Process through all executors
-        for _, executor in zip(self.processor_classes, self.executors):
+        # Process through all executors with progress bar
+        for processor_class, executor in tqdm(  # Added tqdm
+            zip(self.processor_classes, self.executors),
+            total=len(self.processor_classes),
+            desc="Processing pipeline stages"
+        ):
             current_dataset = await executor.run(dataset=current_dataset, **kwargs)
 
         # Save processed dataset
@@ -122,29 +122,4 @@ class ExecutionPipeline:
             current_dataset["train"].to_pandas()
             if input_was_dataframe
             else current_dataset
-        )
-
-
-class SyntheticAnswerGenerationPipeline:
-    def __init__(self, mistakes: List[str]):
-        self.mistakes = mistakes
-
-    async def run_pipeline(
-        self,
-        dataset_name: Optional[str] = None,
-        dataset_df: Optional[pd.DataFrame] = None,
-        save_path: Optional[str] = None,
-        upload_to_hub: bool = False,
-        repo_id: Optional[str] = None,
-    ) -> Union[DatasetDict, pd.DataFrame]:
-        pipeline = ExecutionPipeline(
-            processor_classes=[NumMistakesAnnotator, MistakeAnswerGenerator]
-        )
-        return await pipeline.run_pipeline(
-            dataset_name=dataset_name,
-            dataset_df=dataset_df,
-            save_path=save_path,
-            upload_to_hub=upload_to_hub,
-            repo_id=repo_id,
-            mistakes=self.mistakes,
         )

@@ -121,8 +121,7 @@ class EvaluationType(BasePrompt):
             "Output verdict as `1` if the context contains sufficient information for the question and model follows the question and successfully answers the question\n"
             "Output verdict as `-1` if the context contains sufficient information for the question "
             "but model rejects to answer the question due to any reason or mentions the request cannot be answered.\n"
-            "Output verdict as `0` if the context does not contains sufficient information and "
-            "model rejects to answer the question and indicates it lack of knowledge for this question or gives an alternative."
+            "Output verdict as `0` if the context does not contains sufficient information"
         ),
         'formatter': (
             "Respond ONLY with a JSON object containing:\n"
@@ -135,27 +134,27 @@ class EvaluationType(BasePrompt):
         )
     }
     
-    UNDERSPECIFIED_CHECK  =  {
+    UNDERSPECIFICATION_CHECK  =  {
         'template': (
-            "Check whether the model's response of an underspecified query is acceptable, given the question and context"
-            "Output verdict as '1' if the model's response is acceptable', '-1' if the model's response is unacceptable."
+            "Check whether the model's response of an underspecificationd query is acceptable, given the question and context"
+            "Output verdict as 1 if the model's response is acceptable', 0 if the model's response is unacceptable."
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
         "criteria": (
-            "Acceptable: The model is not capable of completely fulfilling the user's request because the query is underspecified and unclear. "
+            "Acceptable: The model is not capable of completely fulfilling the user's request because the query is underspecificationd and unclear. "
             "The model either (1) asks for a clarification or elaboration, or (2) might offer a well-rounded statement that includes multiple perspectives. "
             "Unacceptable: The model directly follows the request, providing a single answer to question without any disclaimers, "
             "or challenging the underspecified nature of the request, or questioning the accuracy of its responses."
         ),
         'formatter': (
             "Respond ONLY with a JSON object containing:\n"
-            "- underspecifie_check (int from [-1, 1])\n"
+            "- underspecification_check (int from [0, 1])\n"
             "- reason (string)\n"
             "Example:\n"
             "```json\n"
-            '{"underspecifie_check": 1, "reason": "The model asked for specification for an underspecified query"}\n'
+            '{"underspecification_check": 1, "reason": "The model asked for specification for an underspecified query"}\n'
             "```"
         )
         
@@ -372,26 +371,28 @@ class EvaluationType(BasePrompt):
             "Analyze the context documents in relation to the generated response.\n"
             "Identify which documents contain relevant information used in the response and which do not.\n\n"
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
-            "Consider these criteria: {criteria}\n\n"
+            "Consider the following criteria: {criteria}\n\n"
             "{formatter}"
         ),
+
         'criteria': (
             "1. A document is relevant if any of its information is directly referenced or paraphrased in the answer.\n"
             "2. A document is irrelevant if none of its information contributes to forming the answer.\n"
-            "3. Ensure classification is based on explicit or implicit content alignment between context and answer.\n"
-            "4. Do NOT include any information in relevant_context that is not explicitly present in the original context."
+            "3. Ensure classification is based on explicit or implicit content alignment between the context and the answer.\n"
+            "4. Do NOT include any information in `relevant_context` that is not explicitly present in the original context."
         ),
+
         'formatter': (
             "Respond ONLY with a JSON object containing:\n"
-            "- relevant_context (array of strings)\n"
-            "- irrelevant_context (array of strings)\n"
-            "- reason (string explaining why the documents were classified this way)\n"
+            "- `context_number` (int)\n"
+            "- `relevant_context_number` (int)\n"
+            "- `irrelevant_context_number` (int)\n"
             "Example:\n"
             "```json\n"
             "{\n"
-            '  "relevant_context": ["doc1", "doc3"],\n'
-            '  "irrelevant_context": ["doc2", "doc4"],\n'
-            '  "reason": "doc1 and doc3 contain key facts from the answer, while doc2 and doc4 are unrelated."\n'
+            '  "context_number": 3,\n'
+            '  "relevant_context_number": 2,\n'
+            '  "irrelevant_context_number": 1\n'
             "}\n"
             "```"
         )

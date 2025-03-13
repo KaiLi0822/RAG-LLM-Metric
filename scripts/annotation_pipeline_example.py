@@ -25,7 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester"  
+DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake_w_keypoints"  
 
 from data_annotator.annotators import KeyPointAnnotator
 
@@ -33,6 +33,8 @@ async def main():
     logger.info("Start processing pipeline")
     pipeline = ExecutionPipeline([KeyPointAnnotator])
     await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
-                                repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_annotated")
+                                repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_annotated",
+                                model="mistralai/Ministral-8B-Instruct-2410",
+                                base_url="http://127.0.0.1:30000/v1")
 if __name__ == "__main__":
     asyncio.run(main())

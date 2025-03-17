@@ -621,7 +621,7 @@ class FactualCorrectnessEvaluator(RAGEvaluator):
                 "FP": result['FP'],
                 "FN": result['FN'],
                 "F1_score": 0 if (result['TP'] + result['FP'] + result['FN']) == 0 else result['TP'] / (
-                        result['TP'] + result['FP'] + result['FN']),
+                        result['TP'] + (result['FP'] + result['FN'])/2),
             }
 
             return scores

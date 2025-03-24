@@ -123,3 +123,91 @@ class ExecutionPipeline:
             if input_was_dataframe
             else current_dataset
         )
+
+
+class CompoundScoreExecutionPipeline(ExecutionPipeline):
+    def __init__(self, evaluators_with_weights: List[Tuple[type[RAGEvaluator], float]]):
+        processor_classes = [evaluator_cls for evaluator_cls, _ in evaluators_with_weights]
+        super().__init__(processor_classes)
+        self.evaluators_with_weights = evaluators_with_weights
+
+    async def run_pipeline_with_weight(
+            self,
+            dataset_name: Optional[str] = None,
+            dataset_df: Optional[pd.DataFrame] = None,
+            save_path: Optional[str] = None,
+            upload_to_hub: bool = False,
+            repo_id: Optional[str] = None,
+            **kwargs
+    ) -> Union[DatasetDict, pd.DataFrame]:
+        # Capture original columns
+        if dataset_name is not None:
+            original_dataset = load_data(dataset_name)
+            original_columns = set(original_dataset['train'].column_names)
+        elif dataset_df is not None:
+            original_columns = set(dataset_df.columns)
+        else:
+            raise ValueError("Must provide either dataset_name or dataset_df")
+
+        dataset = await super().run_pipeline(
+            dataset_name=dataset_name,
+            dataset_df=dataset_df,
+            save_path=save_path,
+            upload_to_hub=upload_to_hub,
+            repo_id=repo_id,
+            **kwargs
+        )
+
+        if isinstance(dataset, DatasetDict):
+            split = detect_splits(dataset)[0]
+            final_columns = set(dataset[split].column_names)
+        else:
+            final_columns = set(dataset.columns)
+        new_columns = list(final_columns - original_columns)
+
+        if len(new_columns) < len(self.evaluators_with_weights):
+            raise ValueError("Mismatch between number of evaluators and new columns generated")
+
+        evaluator_columns = new_columns[:len(self.evaluators_with_weights)]
+        if isinstance(dataset, DatasetDict):
+            for split_name in dataset:
+                split_dataset = dataset[split_name]
+                columns_with_weights = [
+                    (col, weight)
+                    for (_, weight), col in zip(self.evaluators_with_weights, evaluator_columns)
+                ]
+
+                def compute_weighted_score(ds):
+                    total = 0.0
+                    for col, weight in columns_with_weights:
+                        total += df[col] * weight
+                    ds['Final_Score'] = total
+                    return ds
+
+                updated_split = split_dataset.map(compute_weighted_score)
+                dataset[split_name] = updated_split
+        else:
+            df = dataset.copy()
+            df['Final_Score'] = 0.0
+            for col, (_, weight) in zip(evaluator_columns, self.evaluators_with_weights):
+                df['Final_Score'] += df[col] * weight
+            dataset = df
+
+        # Re-save if save_path is provided
+        if save_path is not None:
+            if isinstance(dataset, DatasetDict):
+                dataset.save_to_disk(save_path)
+            else:
+                dataset.to_csv(save_path, index=False)
+
+        # Re-upload if requested
+        if upload_to_hub:
+            if not repo_id:
+                raise ValueError("repo_id is required for Hub upload")
+            if isinstance(dataset, DatasetDict):
+                dataset.push_to_hub(repo_id=repo_id, token=os.getenv("HF_TOKEN"))
+            else:
+                hf_dataset = Dataset.from_pandas(dataset)
+                hf_dataset.push_to_hub(repo_id=repo_id, token=os.getenv("HF_TOKEN"))
+
+        return dataset

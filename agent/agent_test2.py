@@ -222,7 +222,15 @@ class DynamicEvaluationOrchestrator:
         cancellation_token = CancellationToken()
         response = await self.group_chat_summarizer.on_messages(
             [TextMessage(
-                content=f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final decision\nGROUP_CHAT: {transcripts}",
+                content=(f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final decision\nGROUP_CHAT: {transcripts}"
+                         """Final output MUST be JSON containing:
+        {{
+            "evaluators": [
+                {{"evaluator": "ExactClassName", "weight": 0.25}},
+                ...
+            ],
+            "rationale": "short explanation"
+        }}"""),
                 source="system")],
             cancellation_token,
         )

@@ -44,7 +44,7 @@ class AnswerEquivalenceEvaluator(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "evaluate_answer_equivalence",
+            "name": cls.__name__,
             "description": "Evaluates if generated answer is equivalent to reference answer using LLM. Checks for "
                            "information parity without omissions/additions. Returns binary score (0/1) based on "
                            "structured criteria questions.",
@@ -84,11 +84,11 @@ class AnswerEquivalenceEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ) -> str:
         assert "golden_answer" in kwargs, "Missing required input: golden_answer"
         golden_answer = kwargs.get("golden_answer")
@@ -140,6 +140,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
     """
     https://arxiv.org/html/2412.12300v1
     """
+
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
         super().__init__(llm_class, **llm_kwargs)
         self.EVAL_COLUMNS = ["refusal_accuracy"]
@@ -154,7 +155,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "evaluate_refusal_accuracy",
+            "name": cls.__name__,
             "description": "Assesses model's ability to properly refuse answering unanswerable/ambiguous queries. "
                            "Combines refusal check and underspecification validation. Returns dual scores with "
                            "reasons.",
@@ -239,10 +240,10 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
             logger.info(f"Error parsing LLM response on refusal: {response_text}")
             score2 = {'underspecification_check': 0xFFFFFFFF, "error": str(e)}
 
-        ans =  {'refusal_accuracy': self._get_accuracy(score1, score2)}
+        ans = {'refusal_accuracy': self._get_accuracy(score1, score2)}
 
         prefixed_result = {f"{self.EVAL_SCORE_PREFIX}_{key}": value
-                            for key, value in ans.items()}
+                           for key, value in ans.items()}
         return prefixed_result
 
     def pre_process(self, question, context, answer, **kwargs):
@@ -255,11 +256,11 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
         pass
 
     def evaluate(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ):
         prompt1 = EvalPromptManager().build_prompt(
             question=question,
@@ -300,7 +301,8 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
             logger.info(f"Error parsing LLM response on refusal: {response_text}")
             score2 = {'underspecification_check': 0xFFFFFFFF, "error": str(e)}
 
-        return {'refusal': score1, "underspecification_check_score": score2, "refusal_accuracy": self._get_accuracy(score1, score2)}
+        return {'refusal': score1, "underspecification_check_score": score2,
+                "refusal_accuracy": self._get_accuracy(score1, score2)}
 
 
 class BERTScoreEvaluator(RAGEvaluator):
@@ -328,7 +330,7 @@ class BERTScoreEvaluator(RAGEvaluator):
     @classmethod
     def description(cls) -> Dict:
         return {
-            "name": "calculate_bert_score",
+            "name": cls.__name__,
             "description": "Computes BERT-based precision, recall and F1 between generated and reference answers "
                            "using sentence embeddings. No LLM required.",
             "parameters": {"generated_answer": "str", "reference_answer": "str"},
@@ -415,7 +417,7 @@ class LearningFacilitationEvaluator(RAGEvaluator):
     @classmethod
     def description(cls) -> Dict:
         return {
-            "name": "calculate_bert_score",
+            "name": cls.__name__,
             "description": "Computes BERT-based precision, recall and F1 between generated and reference answers "
                            "using sentence embeddings. No LLM required.",
             "parameters": {"generated_answer": "str", "reference_answer": "str"},
@@ -448,11 +450,11 @@ class LearningFacilitationEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ) -> str:
         return EvalPromptManager().build_prompt(
             question=question,
@@ -510,7 +512,7 @@ class EngagementEvaluator(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "evaluate_engagement",
+            "name": cls.__name__,
             "description": "Measures answer engagement through language use, narrative flow and real-world relevance. "
                            "Provides scored analysis with enhancement recommendations.",
             "parameters": {
@@ -547,11 +549,11 @@ class EngagementEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: Union[str, List[str]],
-        context: Union[str, List[str]],
-        answer: Union[str, List[str]],
-        **kwargs,
+            self,
+            question: Union[str, List[str]],
+            context: Union[str, List[str]],
+            answer: Union[str, List[str]],
+            **kwargs,
     ) -> str:
         return EvalPromptManager().build_prompt(
             question=question,
@@ -565,7 +567,7 @@ class EngagementEvaluator(RAGEvaluator):
         return self.llm.generate(processed_data)
 
     def post_process(
-        self, llm_response: str, **kwargs
+            self, llm_response: str, **kwargs
     ) -> Dict[str, Union[float, List[str]]]:
         """Parse JSON response into scores dictionary"""
         try:
@@ -620,7 +622,7 @@ class ContextRelevanceEvaluator(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "evaluate_context_relevance",
+            "name": cls.__name__,
             "description": "Evaluates relevance of retrieved context to question using LLM. Scores based on R/IR "
                            "segment classification and coverage analysis.",
             "parameters": {"question": "str", "context": "str"},
@@ -656,11 +658,11 @@ class ContextRelevanceEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ) -> str:
         return EvalPromptManager().build_prompt(
             question=question,
@@ -709,7 +711,7 @@ class FactualCorrectnessEvaluator(RAGEvaluator):
     @classmethod
     def description(cls) -> Dict:
         return {
-            "name": "evaluate_factual_correctness",
+            "name": cls.__name__,
             "description": "Compares generated vs reference answers using TP/FP/FN analysis. Calculates factual F1 "
                            "score through statement-level validation.",
             "parameters": {"generated_answer": "str", "reference_answer": "str"},
@@ -747,11 +749,11 @@ class FactualCorrectnessEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ) -> str:
         if "golden_answer" not in kwargs:
             raise KeyError("Missing required key: golden_answer")
@@ -821,7 +823,7 @@ class AnswerSimilarityEvaluator(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "calculate_answer_similarity",
+            "name": cls.__name__,
             "description": "Computes cosine similarity between answer embeddings using sentence transformers. "
                            "Measures semantic equivalence without LLMs.",
             "parameters": {"generated_answer": "str", "reference_answer": "str"},
@@ -843,24 +845,23 @@ class AnswerSimilarityEvaluator(RAGEvaluator):
         golden_answer = row[RAGBENCH_COL_NAMES.GOLDEN_ANSWER.value]
 
         try:
-        # 2. Compute embeddings and cosine similarity
+            # 2. Compute embeddings and cosine similarity
             gen_emb = self.model.encode(answer, convert_to_tensor=True)
             gold_emb = self.model.encode(golden_answer, convert_to_tensor=True)
             similarity = util.cos_sim(gen_emb, gold_emb).item()
 
-        # 3. Return the final score dict
-            ans =  {
-            "answer_similarity": float(similarity)
+            # 3. Return the final score dict
+            ans = {
+                "answer_similarity": float(similarity)
             }
 
-        except:
-            ans =  {
-            "answer_similarity": -1
+        except Exception as e:
+            ans = {
+                "answer_similarity": -1
             }
-
 
         prefixed_result = {f"{self.EVAL_SCORE_PREFIX}_{key}": value
-                            for key, value in ans.items()}
+                           for key, value in ans.items()}
         return prefixed_result
 
     def pre_process(self, question, context, answer, **kwargs):
@@ -897,9 +898,9 @@ class AnswerSimilarityEvaluator(RAGEvaluator):
 
 class KeyPointEvaluators(RAGEvaluator):
     """
-    From https://arxiv.org/abs/2408.01262, using extracted key points generate from ground truth answer to check with generated answer,
-    using the categorized key_points count to calculate generation scores.
-    It can provide completeness, hallucination and irrelevance score.
+    From https://arxiv.org/abs/2408.01262, using extracted key points generate from ground truth answer to check with
+    generated answer, using the categorized key_points count to calculate generation scores. It can provide
+    completeness, hallucination and irrelevance score.
     """
 
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
@@ -923,7 +924,7 @@ class KeyPointEvaluators(RAGEvaluator):
     @classmethod
     def description(cls):
         return {
-            "name": "evaluate_keypoint_coverage",
+            "name": cls.__name__,
             "description": "Assesses answer quality through key point alignment with reference. Scores completeness, "
                            "hallucination and irrelevance ratios.",
             "parameters": {
@@ -1017,15 +1018,16 @@ class KeyPointEvaluators(RAGEvaluator):
             }
 
     def evaluate(
-        self,
-        answer: str | List[str] = None,
-        question: str | List[str] = None,
-        context: str | List[str] = None,
-        **kwargs,
+            self,
+            answer: str | List[str] = None,
+            question: str | List[str] = None,
+            context: str | List[str] = None,
+            **kwargs,
     ) -> Dict:
         processed_data = self.pre_process(question, context, answer, **kwargs)
         llm_response = self.call_llm(processed_data)
         return self.post_process(llm_response, num_key_points=self.num_key_points)
+
 
 class KeyPointCompletenessEvaluator(KeyPointEvaluators):
     """
@@ -1034,6 +1036,7 @@ class KeyPointCompletenessEvaluator(KeyPointEvaluators):
     calculated by portion of key points that in generated answer and are relevant and consistent with the standard
     answer.
     """
+
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
         super().__init__(llm_class, **llm_kwargs)
         self.EVAL_COLUMNS = ["completeness_score"]
@@ -1044,6 +1047,20 @@ class KeyPointCompletenessEvaluator(KeyPointEvaluators):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+
+    @classmethod
+    def description(cls):
+        return {
+            "name": cls.__name__,
+            "description": "Evaluates the completeness of the generated answer by measuring the proportion of key "
+                           "points from the reference answer that are correctly addressed and consistent in the "
+                           "generated response.",
+            "parameters": {
+                "question": "str",
+                "generated_answer": "str",
+                "reference_keypoints": "List[str]",
+            },
+        }
 
     def post_process(self, llm_response, **kwargs):
         scores = super().post_process(llm_response, **kwargs)
@@ -1063,6 +1080,7 @@ class KeyPointIrrelevantEvaluator(KeyPointEvaluators):
     generated answer, using the categorized key_points count to calculate generation scores. Irrelevant score is
     calculated by one minus the portion of key points that are not covered or mentioned in the generated answer.
     """
+
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
         super().__init__(llm_class, **llm_kwargs)
         self.EVAL_COLUMNS = ["irrelevant_score"]
@@ -1073,6 +1091,20 @@ class KeyPointIrrelevantEvaluator(KeyPointEvaluators):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+
+    @classmethod
+    def description(cls):
+        return {
+            "name": cls.__name__,
+            "description": "Assesses the irrelevance of the generated answer by calculating the proportion of key "
+                           "points from the reference answer that are not addressed or mentioned in the generated "
+                           "response.",
+            "parameters": {
+                "question": "str",
+                "generated_answer": "str",
+                "reference_keypoints": "List[str]",
+            },
+        }
 
     def post_process(self, llm_response, **kwargs):
         scores = super().post_process(llm_response, **kwargs)
@@ -1093,6 +1125,7 @@ class KeyPointHallucinationEvaluator(KeyPointEvaluators):
     calculated by one minus the portion of key points are incorrectly addressed or contain significant errors in the
     generated answer.
     """
+
     def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
         super().__init__(llm_class, **llm_kwargs)
         self.EVAL_COLUMNS = ["hallucination_score"]
@@ -1103,6 +1136,22 @@ class KeyPointHallucinationEvaluator(KeyPointEvaluators):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+
+    class KeyPointHallucinationEvaluator(KeyPointEvaluators):
+        # ... (existing code)
+        @classmethod
+        def description(cls):
+            return {
+                "name": cls.__name__,
+                "description": "Measures hallucination in the generated answer by determining the proportion of key "
+                               "points from the reference answer that are incorrectly addressed or contain "
+                               "significant errors in the generated response.",
+                "parameters": {
+                    "question": "str",
+                    "generated_answer": "str",
+                    "reference_keypoints": "List[str]",
+                },
+            }
 
     def post_process(self, llm_response, **kwargs):
         scores = super().post_process(llm_response, **kwargs)
@@ -1116,12 +1165,11 @@ class KeyPointHallucinationEvaluator(KeyPointEvaluators):
             return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS}
 
 
-
 class AdherenceFaithfulnessEvaluator(RAGEvaluator):
     """
-    Uses an LLM to verify that all parts of the generated answer are grounded in the provided context.
-    Returns a faithfulness_score between 0 and 1, plus any unfaithful (hallucinated) segments.
-    Related paper:ASTRID - An Automated and Scalable TRIaD for the Evaluation of RAG-based Clinical Question Answering Systems,
+    Uses an LLM to verify that all parts of the generated answer are grounded in the provided context. Returns a
+    faithfulness_score between 0 and 1, plus any unfaithful (hallucinated) segments. Related paper:ASTRID - An
+    Automated and Scalable TRIaD for the Evaluation of RAG-based Clinical Question Answering Systems,
     https://arxiv.org/abs/2501.08208
     """
 
@@ -1143,7 +1191,7 @@ class AdherenceFaithfulnessEvaluator(RAGEvaluator):
     @classmethod
     def description(cls) -> Dict:
         return {
-            "name": "evaluate_faithfulness",
+            "name": cls.__name__,
             "description": "Validates answer grounding in context through hallucination detection. Scores "
                            "faithfulness and lists unsubstantiated claims.",
             "parameters": {
@@ -1180,11 +1228,11 @@ class AdherenceFaithfulnessEvaluator(RAGEvaluator):
             }
 
     def pre_process(
-        self,
-        question: str | List[str],
-        context: str | List[str],
-        answer: str | List[str],
-        **kwargs,
+            self,
+            question: str | List[str],
+            context: str | List[str],
+            answer: str | List[str],
+            **kwargs,
     ) -> str:
 
         return EvalPromptManager().build_prompt(
@@ -1239,7 +1287,7 @@ class ContextUtilizationEvaluator(RAGEvaluator):
     @classmethod
     def description(cls) -> Dict:
         return {
-            "name": "evaluate_context_utilization",
+            "name": cls.__name__,
             "description": "Measures effective use of provided context in answers through relevance classification. "
                            "Scores utilization ratio of context segments.",
             "parameters": {
@@ -1253,7 +1301,7 @@ class ContextUtilizationEvaluator(RAGEvaluator):
         return {PROMPT: self.pre_process(
             question=row[RAGBENCH_COL_NAMES.QUESTION.value],
             context=row[RAGBENCH_COL_NAMES.CONTEXT.value],
-            answer=row[EVAL_COL_MAP[self.answer_column]],  
+            answer=row[EVAL_COL_MAP[self.answer_column]],
         )}
 
     async def a_call_llm(self, processed: Dict) -> Dict:
@@ -1293,11 +1341,10 @@ class ContextUtilizationEvaluator(RAGEvaluator):
             # irrelevant_context = result.get("irrelevant_context", [])
             total_context = result.get("context_number", 0)
             context_utilization_score = relevant_context / total_context if total_context > 0 else 0
-            return {"context_utilization_score":context_utilization_score}
+            return {"context_utilization_score": context_utilization_score}
         except (json.JSONDecodeError, KeyError) as e:
             logger.info(f"Error parsing LLM response: {llm_response}")
             return {"context_utilization_score": -1, "error": str(e)}
-
 
 
 class CoherenceEvaluator(RAGEvaluator):
@@ -1311,6 +1358,21 @@ class CoherenceEvaluator(RAGEvaluator):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+
+    @classmethod
+    def description(cls):
+        return {
+            "name": cls.__name__,
+            "description": "Assesses the logical flow, grammatical correctness, readability, and internal consistency "
+                           "of the generated answer."
+                           "Evaluates how well ideas are organized and presented cohesively.",
+            "parameters": {
+                "question": "str",
+                "context": "str",
+                "generated_answer": "str",
+            },
+        }
+
     def pre_process_row(self, row: Dict) -> Dict:
         assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
         return {PROMPT: self.pre_process(
@@ -1330,7 +1392,6 @@ class CoherenceEvaluator(RAGEvaluator):
             return {f"{self.EVAL_SCORE_PREFIX}_{key}": result[key] for key in self.EVAL_COLUMNS}
         except KeyError:
             return {f"{self.EVAL_SCORE_PREFIX}_{key}": None for key in self.EVAL_COLUMNS}
-
 
     def pre_process(
             self, question: str | List[str], context: str | List[str], answer: str | List[str], **kwargs
@@ -1371,6 +1432,19 @@ class FactualAccuracyEvaluator(RAGEvaluator):
             self.EVAL_SCORE_PREFIX = f"{self.answer_column}_{self.EVAL_SCORE_PREFIX}"
         else:
             self.EVAL_SCORE_PREFIX = self.answer_column
+
+    @classmethod
+    def description(cls):
+        return {
+            "name": cls.__name__,
+            "description": "Evaluates factual alignment between the generated answer and provided context. "
+                           "Checks for contradictions, unsupported claims, and adherence to authoritative information "
+                           "in the context.",
+            "parameters": {
+                "context": "str",
+                "generated_answer": "str",
+            },
+        }
 
     def pre_process_row(self, row: Dict) -> Dict:
         assert os.getenv("ANSWER_TYPE", None), "Environment variable ANSWER_TYPE must be defined for evaluation"
@@ -1417,4 +1491,3 @@ class FactualAccuracyEvaluator(RAGEvaluator):
             return {
                 "error": str(e)
             }
-

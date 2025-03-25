@@ -108,3 +108,7 @@ class RAGEvaluator(ABC):
         processed_data = self.pre_process(question, context, answer, **kwargs)
         llm_response = self.call_llm(processed_data)
         return self.post_process(llm_response)
+
+    @classmethod
+    def description(cls) -> Dict:
+        pass

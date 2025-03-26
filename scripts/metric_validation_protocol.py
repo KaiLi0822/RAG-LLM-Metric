@@ -27,7 +27,7 @@ for file_path in hf_urls:
         dataset_name = parts[2] if len(parts) >= 3 else "Unknown"
         model_name = parts[0]
 
-        # Step 1: Extract all metric names from ground truth columns
+        # Step 1: Obtain metric names
         metric_columns = [col for col in df.columns if col.startswith("ground_truth_") and col.endswith("_score")]
         metric_names = [col.replace("ground_truth_", "").replace("_score", "") for col in metric_columns]
 
@@ -61,12 +61,12 @@ for file_path in hf_urls:
                     "ground_truth_mean": gt_mean,
                     "ground_truth_variance(s^2)": gt_var,
                     "ground_truth_variance(sigma^2)": gt_sigma,
-                    "correct_mean": re_mean,
-                    "correct_variance(s^2)": re_var,
-                    "correct_variance(sigma^2)": re_sigma,
-                    "incorrect_mean": in_mean,
-                    "incorrect_variance(s^2)": in_var,
-                    "incorrect_variance(sigma^2)": in_sigma,
+                    "rewrite_mean": re_mean,
+                    "rewrite_variance(s^2)": re_var,
+                    "rewrite_variance(sigma^2)": re_sigma,
+                    "wrong_mean": in_mean,
+                    "wrong_variance(s^2)": in_var,
+                    "wrong_variance(sigma^2)": in_sigma,
                     "Cohen's d": cohen_d,
                     "VR": vr
                 })

@@ -89,7 +89,7 @@ class DynamicEvaluationOrchestrator:
         }
 
     def _initialize_base_roles(self) -> Dict[str, AssistantAgent]:
-        json_dir = '../output/json'
+        json_dir = os.path.join(os.path.dirname(__file__), '../output/json')
         json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
 
         base_roles = {}

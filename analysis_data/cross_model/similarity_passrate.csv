@@ -1,0 +1,15 @@
+metric,passrate,passed_row_counts,valid_row_counts,invalid_row_counts,all_rows
+combined_answer_equivalence_equivalence_score,0.1675,67,400,0,400
+combined_Context_Utilization_context_utilization_score,0.36666666666666664,132,360,40,400
+combined_key_point_completeness_score,0.4619289340101523,182,394,6,400
+combined_answer_similarity,1.0,396,396,4,400
+combined_Context_Relevance_relevance_score,0.13924050632911392,55,395,5,400
+combined_refusal_accuracy_refusal_accuracy,0.03007518796992481,12,399,1,400
+combined_FACTUAL_ACCURACY_accuracy_score,0.7894736842105263,315,399,1,400
+combined_engagement_engagement_score,0.68,272,400,0,400
+combined_Adherence_Faithfulness_faithfulness_score,0.7117794486215538,284,399,1,400
+combined_key_point_irrelevant_score,0.38010204081632654,149,392,8,400
+combined_key_point_hallucination_score,0.6531645569620254,258,395,5,400
+combined_COHERENCE_coherence_score,0.95,380,400,0,400
+combined_factual_correctness_F1_score,0.5625,225,400,0,400
+combined_learning_facilitation_learning_facilitation_score,0.915,366,400,0,400

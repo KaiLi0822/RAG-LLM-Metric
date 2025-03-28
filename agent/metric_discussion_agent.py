@@ -259,9 +259,7 @@ class DynamicEvaluationOrchestrator:
             metrics/importance weights are suitable and make your decision.
             
             If you think the agreement on metrics selection and importance in the discussion has beem made, 
-            you should output 'TERMINATE DISCUSSION' after your final decision in JSON with the following format that 
-            includes metrics selections and weights. {{ "evaluators": [ {{"evaluator": "ExactClassName", 
-            "weight": 0.25}}, ... ], "rationale": "short explanation" }}. Otherwise you should output a JSON with the 
+            you should output 'TERMINATE DISCUSSION' Otherwise you should output a JSON with the 
             following format to propose your evaluation metrics selections and weights. {{ "evaluators": [ {{
             "evaluator": "ExactClassName", "weight": 0.25}}, ... ], "rationale": "short explanation" }}""",
             tools=[self.read_data_tool],
@@ -384,7 +382,13 @@ class DynamicEvaluationOrchestrator:
         Your group MUST agree on:
         1. Which evaluator classes to use from the available list
         2. Appropriate weights for each (summing to 1.0)
-
+        
+        If the User Criteria is specific about the evaluator and weight: 
+        1. Check if user criteria is complete (if 
+        user-given weights sum up to 1 then it is complete) 
+        2. Complete the rest part of the evaluator if user 
+        criteria is not complete and keep user provided evaluator and weights unchanged
+        
         Final output MUST be JSON containing:
         {{
             "evaluators": [

@@ -1,6 +1,7 @@
 import importlib
 import json
 import random
+from datetime import datetime
 
 from autogen_agentchat.agents import AssistantAgent, UserProxyAgent
 from autogen_agentchat.teams import RoundRobinGroupChat
@@ -20,6 +21,9 @@ import inspect
 import pandas as pd
 from evaluator.base_evaluator import RAGEvaluator
 from duckduckgo_search import DDGS
+
+from execution_pipeline.execution_pipeline import CompoundScoreExecutionPipeline
+from utils.llm import LLMClient, OpenAIClientLLM
 
 
 def get_evaluator_classes():
@@ -43,6 +47,7 @@ def make_valid_identifier(input_str):
         cleaned_str = '_' + cleaned_str
     return cleaned_str if cleaned_str else 'identifier'
 
+
 def perform_web_search(query: str) -> str:
     """Perform web search using DuckDuckGo and return results as text."""
     with DDGS() as ddgs:
@@ -54,13 +59,31 @@ class DynamicEvaluationOrchestrator:
 
     def __init__(self,
                  dataset_name: Optional[str] = None,
-                 dataset_df: Optional[pd.DataFrame] = None, ):
+                 dataset_df: Optional[pd.DataFrame] = None,
+                 evaluate_llm_class: type[LLMClient] = OpenAIClientLLM,
+                 evaluate_llm_model: str = "gpt-4o-2024-08-06",
+                 evaluate_llm_base_url: str = "https://api.openai.com/v1",
+                 agent_llm_model: str = "gpt-4o-2024-08-06",
+                 upload_to_hub: bool = True,
+                 repo_name: Optional[str] = None,
+                 max_discussion_round: Optional[int] = 50):
         if dataset_name is None:
+            if upload_to_hub and repo_name is None:
+                raise ValueError("must offer repo name when uploading result from pandas df to HF")
             self.dataset = dataset_df
         elif dataset_df is None:
             self.dataset = dataset_name
         else:
             raise ValueError("must offer dataset by name to HF or a pandas dataframe")
+        self.evaluate_llm_class = evaluate_llm_class
+        self.evaluate_llm_model = evaluate_llm_model
+        self.evaluate_llm_base_url = evaluate_llm_base_url
+        self.agent_llm_model = agent_llm_model
+        self.upload_to_hub = upload_to_hub
+        if not repo_name:
+            self.repo_name = f"{dataset_name}-Evaluated-{datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}-{self.evaluate_llm_model}"
+        self.max_discussion_round = max_discussion_round
+
         self.model_client = self._create_model_client()
         self.base_agents = self._initialize_base_roles()
         self.web_search_tool = self._create_web_search_tool()
@@ -70,12 +93,13 @@ class DynamicEvaluationOrchestrator:
         self.example_double_checker = self._create_example_double_checker()
         self.group_chat_summarizer = self._create_group_chat_summarizer()
         self.user_proxy = UserProxyAgent(name="UserProxy")
-        self.chat_agent = AssistantAgent(name="ChatAgent", system_message="Your are a helpful assistant", model_client=self.model_client)
+        self.chat_agent = AssistantAgent(name="ChatAgent", system_message="Your are a helpful assistant",
+                                         model_client=self.model_client)
         self.metric_info = self._get_metrics_metadata()
 
     def _create_model_client(self):
         return OpenAIChatCompletionClient(
-            model="gpt-4o-mini-2024-07-18",
+            model=self.agent_llm_model,
             api_key=os.getenv("AGENT_OPENAI_API_KEY"),
             model_info={
                 "vision": False,
@@ -102,7 +126,9 @@ class DynamicEvaluationOrchestrator:
 
                 # Generate unique random indices
                 indices = random.sample(range(dataset_size), n_samples)
-                return json.dumps([hf_dataset[i] for i in indices])
+                return json.dumps([{"question": hf_dataset[i]["question"],
+                                    "context": hf_dataset[i]["documents"],
+                                    "golden_answer": hf_dataset[i]["response"]} for i in indices])
 
             except Exception as e:
                 raise ValueError(f"Failed to load dataset: {str(e)}")
@@ -110,7 +136,9 @@ class DynamicEvaluationOrchestrator:
         elif isinstance(self.dataset, pd.DataFrame):
             # Handle pandas DataFrame with random sampling
             n_samples = min(2, len(self.dataset))
-            return json.dumps(self.dataset.sample(n=n_samples).to_dict(orient='records'))
+            return json.dumps(self.dataset.sample(n=n_samples).rename(columns={"documents": "context",
+                                                                               "response": "golden_answer"})[
+                                  ["question", "context", "golden_answer"]].to_dict(orient='records'))
 
         else:
             raise TypeError("Input must be HF dataset name (str) or pandas DataFrame")
@@ -226,13 +254,16 @@ class DynamicEvaluationOrchestrator:
         return AssistantAgent(
             name="ExampleDoubleChecker",
             system_message="""You are a helpful Critic for the discussion. Solve tasks using your tools. Your task is 
-            to retrieve examples from the evaluation dataset, analyze why the "golden answer" in each example is 
-            effective, and validate whether the previously proposed evaluation metrics/importance weights are suitable.
+            to retrieve examples from the evaluation dataset (at least once during the group chat), analyze why the 
+            "golden answer" in each example is effective, and validate whether the previously proposed evaluation 
+            metrics/importance weights are suitable and make your decision.
             
             If you think the agreement on metrics selection and importance in the discussion has beem made, 
-            you should output 'TERMINATE DISCUSSION'. Otherwise you should output a JSON with the following format to 
-            propose your evaluation metrics selections and weights. {{ "evaluators": [ {{"evaluator": 
-            "ExactClassName", "weight": 0.25}}, ... ], "rationale": "short explanation" }}""",
+            you should output 'TERMINATE DISCUSSION' after your final decision in JSON with the following format that 
+            includes metrics selections and weights. {{ "evaluators": [ {{"evaluator": "ExactClassName", 
+            "weight": 0.25}}, ... ], "rationale": "short explanation" }}. Otherwise you should output a JSON with the 
+            following format to propose your evaluation metrics selections and weights. {{ "evaluators": [ {{
+            "evaluator": "ExactClassName", "weight": 0.25}}, ... ], "rationale": "short explanation" }}""",
             tools=[self.read_data_tool],
             model_client=self.model_client
         )
@@ -276,7 +307,8 @@ class DynamicEvaluationOrchestrator:
         # Extract domain analysis
         try:
             # Try to parse the last message as JSON
-            domain_analysis = json.loads(analysis_response.chat_message.content.strip().replace("```json", "").replace("```", ""))
+            domain_analysis = json.loads(
+                analysis_response.chat_message.content.strip().replace("```json", "").replace("```", ""))
         except (json.JSONDecodeError, IndexError, KeyError):
             # Fallback to empty result
             domain_analysis = {
@@ -339,7 +371,7 @@ class DynamicEvaluationOrchestrator:
              for e in self.metric_info]
         )
 
-        termination = MaxMessageTermination(20) | TextMentionTermination("TERMINATE DISCUSSION")
+        termination = MaxMessageTermination(self.max_discussion_round) | TextMentionTermination("TERMINATE DISCUSSION")
         group_chat = RoundRobinGroupChat(
             participants=all_agents,
             termination_condition=termination,
@@ -368,7 +400,8 @@ class DynamicEvaluationOrchestrator:
         return self._parse_final_decision(await self._summarize_group_chat(task_result, user_criteria))
 
     async def _summarize_group_chat(self, task_result, user_criteria):
-        transcripts = "\n".join([msg.content for msg in task_result.messages])
+        transcripts = "\n".join(
+            [msg.content for msg in task_result.messages if isinstance(msg, TextMessage)])
         cancellation_token = CancellationToken()
         response = await self.group_chat_summarizer.on_messages(
             [TextMessage(
@@ -438,12 +471,32 @@ class DynamicEvaluationOrchestrator:
         print("=== END OF PLAN ===\n")
         return evaluators
 
+    async def evaluate(self, user_criteria: str):
+        final_result = await self.negotiate_metrics(user_criteria=user_criteria)
+        pipeline = CompoundScoreExecutionPipeline(evaluators_with_weights=final_result["classes"])
+        if isinstance(self.dataset, str):
+            await pipeline.run_pipeline_with_weight(
+                dataset_name=self.dataset,
+                upload_to_hub=self.upload_to_hub, llm_class=self.evaluate_llm_class,
+                repo_id=self.repo_name,
+                model=self.evaluate_llm_model,
+                base_url=self.evaluate_llm_base_url, )
+        else:
+            await pipeline.run_pipeline_with_weight(
+                dataset_df=self.dataset,
+                upload_to_hub=self.upload_to_hub, llm_class=self.evaluate_llm_class,
+                repo_id=self.repo_name,
+                model=self.evaluate_llm_model,
+                base_url=self.evaluate_llm_base_url, )
+
 
 async def main():
-    evaluator = DynamicEvaluationOrchestrator(dataset_name="RAGEVALUATION-HJKMY/TSBC_100row_mistake_added")
-    final_result = await evaluator.negotiate_metrics("Please help build evaluate metrics for chatbot run by technical "
-                                                     "safety BC(TSBC)")
-    print(final_result)
+    evaluator = DynamicEvaluationOrchestrator(dataset_name="RAGEVALUATION-HJKMY/TSBC_100row_mistake_added",
+                                              evaluate_llm_model="gpt-4o-mini-2024-07-18",
+                                              agent_llm_model="gpt-4o-mini-2024-07-18",
+                                              max_discussion_round=20)
+    await evaluator.evaluate("Please help build evaluate metrics for chatbot run by technical safety BC(TSBC), "
+                             "you need to emphasize on the correctness and completeness")
 
 
 if __name__ == "__main__":

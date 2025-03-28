@@ -211,7 +211,7 @@ class RefusalAccuracyEvaluator(RAGEvaluator):
             question=question,
             context=context,
             answer=answer,
-            eval_type=EvaluationType.UNDERSPECIFIED_CHECK
+            eval_type=EvaluationType.UNDERSPECIFICATION_CHECK
         )
 
         resp2 = await self.llm.a_generate(prompt2)

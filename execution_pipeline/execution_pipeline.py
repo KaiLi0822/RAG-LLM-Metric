@@ -180,7 +180,7 @@ class CompoundScoreExecutionPipeline(ExecutionPipeline):
                 def compute_weighted_score(ds):
                     total = 0.0
                     for col, weight in columns_with_weights:
-                        total += df[col] * weight
+                        total += ds[col] * weight
                     ds['Final_Score'] = total
                     return ds
 

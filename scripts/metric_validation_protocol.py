@@ -13,31 +13,55 @@ hf_urls = [
     "hf://datasets/RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_emanual_400row_mistake_added/data/train-00000-of-00001.parquet"
 ]
 
-# Initialize the final results list
 all_results = []
 
 for file_path in hf_urls:
     try:
-        print(f"\nProcessing: {file_path}")
+        print(f"\n🔍 Processing: {file_path}")
         df = pd.read_parquet(file_path)
 
-        # Extract dataset/model names from the URL (or override manually if needed)
+        # Extract dataset/model names
         full_dataset_name = file_path.split("/")[4]
         parts = full_dataset_name.split("_")
         dataset_name = parts[2] if len(parts) >= 3 else "Unknown"
         model_name = parts[0]
 
-        # Step 1: Obtain metric names
-        metric_columns = [col for col in df.columns if col.startswith("ground_truth_") and col.endswith("_score")]
-        metric_names = [col.replace("ground_truth_", "").replace("_score", "") for col in metric_columns]
+        # Step 1: Identify metric names
+        metric_columns = [col for col in df.columns if col.startswith("ground_truth_")]
+        metric_names = []
 
-        # Step 2: Compute stats for each metric
+        for col in metric_columns:
+            raw = col.removeprefix("ground_truth_")
+            if raw.endswith("_score"):
+                metric = raw.removesuffix("_score")
+            else:
+                metric = raw
+
+            # Fix duplicated suffixes like refusal_accuracy_refusal_accuracy
+            parts_metric = metric.split("_")
+            if len(parts_metric) >= 2 and parts_metric[-1] == parts_metric[-2]:
+                metric = "_".join(parts_metric[:-1])
+
+            metric_names.append(metric)
+
+        metric_names = list(set(metric_names))  # Remove duplicates
+
+        # Step 2: Process each metric
         for metric in metric_names:
             try:
-                gt_scores = df[f"ground_truth_{metric}_score"].dropna()
-                re_scores = df[f"Correct_{metric}_score"].dropna()
-                in_scores = df[f"Incorrect_{metric}_score"].dropna()
+                def resolve_col(prefix):
+                    # Match any col starting with prefix_metric
+                    prefix_string = f"{prefix}_{metric}"
+                    matches = [col for col in df.columns if col.startswith(prefix_string)]
+                    if not matches:
+                        raise KeyError(f"{prefix_string} column for '{metric}' not found")
+                    return df[matches[0]].dropna()
 
+                gt_scores = resolve_col("ground_truth")
+                re_scores = resolve_col("Correct")
+                in_scores = resolve_col("Incorrect")
+
+                # Mean and variance calculations
                 gt_mean = gt_scores.mean()
                 re_mean = re_scores.mean()
                 in_mean = in_scores.mean()
@@ -70,13 +94,14 @@ for file_path in hf_urls:
                     "Cohen's d": cohen_d,
                     "VR": vr
                 })
-            except KeyError:
-                print(f"Metric {metric} missing columns. Skipping...")
+
+            except KeyError as e:
+                print(f"⚠️ Metric '{metric}' skipped — {e}")
 
     except Exception as e:
-        print(f"Failed to process {file_path}: {e}")
+        print(f"❌ Failed to process {file_path}: {e}")
 
-# Convert all results to DataFrame and export
+# Save to CSV
 final_df = pd.DataFrame(all_results)
 final_df.to_csv("metric_validation_summary_all.csv", index=False)
 print("✅ Saved: metric_validation_summary_all.csv")

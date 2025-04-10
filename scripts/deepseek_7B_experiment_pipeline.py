@@ -29,8 +29,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_delucionqa_400row_mistake_added"
-OUTPUT_NAME = "RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_delucionqa_400row_mistake_added"
+DATASET_NAME = "RAGEVALUATION-HJKMY/TSBC_cleaned_demo"
+OUTPUT_NAME = "RAGEVALUATION-HJKMY/TSBC_cleaned_demo_experiment"
 
 def get_evaluator_classes():
     """Retrieve all implemented evaluators derived from RAGEvaluator."""
@@ -54,9 +54,9 @@ async def main():
     logger.info("Start processing pipeline")
     pipeline = ExecutionPipeline(CLASSES)
     await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data",
-                                upload_to_hub=True, llm_class = LocalDeepSeekR1,
+                                upload_to_hub=True, llm_class=LocalDeepSeekR1,
                                 repo_id=OUTPUT_NAME,
-                                model="deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
-                                base_url="http://0.0.0.0:30000/v1")
+                                model="deepseek-r1:7b",
+                                base_url="http://localhost:11434/v1")
 if __name__ == "__main__":
     asyncio.run(main())

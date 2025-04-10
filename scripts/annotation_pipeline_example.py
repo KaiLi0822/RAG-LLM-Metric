@@ -25,7 +25,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/ragbench_10row_tester_synthetic_mistake_w_keypoints"  
+DATASET_NAME = "RAGEVALUATION-HJKMY/TSBC_cleaned"
 
 from data_annotator.annotators import KeyPointAnnotator
 

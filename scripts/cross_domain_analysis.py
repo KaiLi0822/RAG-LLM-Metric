@@ -6,17 +6,17 @@ from datasets import load_dataset
 
 # 1. LOAD DATASETS (DeepSeek7b, 3 Domains)
 techqa = load_dataset(
-    "RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_techqa_400row_mistake_added",
+    "RAGEVALUATION-HJKMY/Llama8b_ragbench_techqa_400row_mistake_added",
     split="train"
 ).to_pandas()
 
 emanual = load_dataset(
-    "RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_emanual_400row_mistake_added",
+    "RAGEVALUATION-HJKMY/Llama8b_ragbench_emanual_400row_mistake_added",
     split="train"
 ).to_pandas()
 
 delucionqa = load_dataset(
-    "RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_delucionqa_400row_mistake_added",
+    "RAGEVALUATION-HJKMY/Llama8b_ragbench_delucionqa_400row_mistake_added",
     split="train"
 ).to_pandas()
 
@@ -69,7 +69,7 @@ custom_thresholds = {
     # 10. Key Point Completeness
     "key_point_completeness_score": 0.7,
     # 11. Key Point Hallucination
-    #     (A “lower is better” metric might need a different approach,
+    #     (A "lower is better" metric might need a different approach,
     #      but we'll assume higher->better for demonstration.)
     "key_point_hallucination_score": 0.5,
     # 12. Key Point Irrelevant
@@ -136,23 +136,26 @@ for metric in metric_names:
     wrong_vals   = np.array([pass_rates_wrong[d]   for d in domain_order])
     gt_vals      = np.array([pass_rates_gt[d]      for d in domain_order])
 
-    # Function to compute median, MAD, RMAD
-    def compute_mad_rmad(values):
-        med = np.median(values)
-        abs_dev = np.abs(values - med)
-        mad = np.median(abs_dev)
-        if med == 0:
+    # Function to compute mean, MAD, RMAD
+    # MODIFIED: Now uses mean absolute deviation instead of median absolute deviation
+    def compute_mean_mad_rmad(values):
+        mean_val = np.mean(values)
+        # Mean Absolute Deviation (MAD): average of absolute deviations from the mean
+        abs_dev = np.abs(values - mean_val)
+        mad = np.mean(abs_dev)
+        # Relative MAD: MAD divided by mean (when possible)
+        if mean_val == 0:
             rmad = np.nan
         else:
-            rmad = mad / med
-        return med, mad, rmad
+            rmad = mad / mean_val
+        return mean_val, mad, rmad
 
     # rewrite
-    rewrite_median, rewrite_MAD, rewrite_RMAD = compute_mad_rmad(rewrite_vals)
+    rewrite_mean, rewrite_MAD, rewrite_RMAD = compute_mean_mad_rmad(rewrite_vals)
     # wrong
-    wrong_median, wrong_MAD, wrong_RMAD = compute_mad_rmad(wrong_vals)
+    wrong_mean, wrong_MAD, wrong_RMAD = compute_mean_mad_rmad(wrong_vals)
     # ground_truth
-    gt_median, gt_MAD, gt_RMAD = compute_mad_rmad(gt_vals)
+    gt_mean, gt_MAD, gt_RMAD = compute_mean_mad_rmad(gt_vals)
 
     row = {
         "Metric": metric,
@@ -162,7 +165,7 @@ for metric in metric_names:
         "techqa_rewrite_PassRate": rewrite_vals[0],
         "emanual_rewrite_PassRate": rewrite_vals[1],
         "delucionqa_rewrite_PassRate": rewrite_vals[2],
-        "rewrite_median(PassRate)": rewrite_median,
+        "rewrite_mean(PassRate)": rewrite_mean,  # Changed from median to mean
         "rewrite_MAD": rewrite_MAD,
         "rewrite_RMAD": rewrite_RMAD,
 
@@ -170,7 +173,7 @@ for metric in metric_names:
         "techqa_wrong_PassRate": wrong_vals[0],
         "emanual_wrong_PassRate": wrong_vals[1],
         "delucionqa_wrong_PassRate": wrong_vals[2],
-        "wrong_median(PassRate)": wrong_median,
+        "wrong_mean(PassRate)": wrong_mean,  # Changed from median to mean
         "wrong_MAD": wrong_MAD,
         "wrong_RMAD": wrong_RMAD,
 
@@ -178,7 +181,7 @@ for metric in metric_names:
         "techqa_ground_truth_PassRate": gt_vals[0],
         "emanual_ground_truth_PassRate": gt_vals[1],
         "delucionqa_ground_truth_PassRate": gt_vals[2],
-        "ground_truth_median(PassRate)": gt_median,
+        "ground_truth_mean(PassRate)": gt_mean,  # Changed from median to mean
         "ground_truth_MAD": gt_MAD,
         "ground_truth_RMAD": gt_RMAD
     }

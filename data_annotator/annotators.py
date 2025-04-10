@@ -45,7 +45,7 @@ class KeyPointAnnotator(DataAnnotator):
             result = json.loads(response_text)
             return {"key_points": result["key_points"]}
         except (json.JSONDecodeError, KeyError) as e:
-            logger.info(f"Error parsing LLM response for row{row['id']}: {response_text}")
+            # logger.info(f"Error parsing LLM response for row{row['id']}: {response_text}")
             return {"key_points": ["error"]}
 
 

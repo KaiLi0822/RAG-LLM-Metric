@@ -40,10 +40,10 @@ df = load_dataset(DATASET_NAME)['train'].to_pandas().head(10)
 async def main():
     logger.info("Start processing pipeline")
     pipeline = ExecutionPipeline([NumMistakesAnnotator, MistakeDistributionAnnotator, MistakeAnswerGenerator])
-    await pipeline.run_pipeline(dataset_df=df, save_path="./tmp_data", upload_to_hub=True,
+    return await pipeline.run_pipeline(dataset_df=df, save_path="./tmp_data", upload_to_hub=True,
                                 repo_id="RAGEVALUATION-HJKMY/TSBC_cleaned_demo",
                                 llm_class=OpenAIClientLLM, model="gpt-4o-mini-2024-07-18",
                                 base_url="https://api.openai.com/v1/")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    print(asyncio.run(main()))

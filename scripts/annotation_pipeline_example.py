@@ -1,5 +1,8 @@
 import asyncio
 import sys
+
+from utils.llm import OpenAIClientLLM
+
 sys.path.append("..")
 
 from execution_pipeline.execution_pipeline import ExecutionPipeline
@@ -25,16 +28,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-DATASET_NAME = "RAGEVALUATION-HJKMY/TSBC_cleaned"
+DATASET_NAME = "RAGEVALUATION-HJKMY/TSBC_cleaned_demo"
 
 from data_annotator.annotators import KeyPointAnnotator
 
 async def main():
     logger.info("Start processing pipeline")
     pipeline = ExecutionPipeline([KeyPointAnnotator])
-    await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
-                                repo_id="RAGEVALUATION-HJKMY/ragbench_10row_tester_annotated",
-                                model="mistralai/Ministral-8B-Instruct-2410",
-                                base_url="http://127.0.0.1:30000/v1")
+    return await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
+                                repo_id="RAGEVALUATION-HJKMY/TSBC_cleaned_demo",
+                                llm_class=OpenAIClientLLM, model="gpt-4o-mini-2024-07-18",
+                                base_url="https://api.openai.com/v1/")
 if __name__ == "__main__":
     asyncio.run(main())

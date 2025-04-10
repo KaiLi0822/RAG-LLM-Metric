@@ -380,7 +380,7 @@ class DynamicEvaluationOrchestrator:
         {evaluator_list}
 
         Your group MUST agree on:
-        1. Which evaluator classes to use from the available list
+        1. Which evaluator classes to use from the available list (NO MORE THAN 5)
         2. Appropriate weights for each (summing to 1.0)
         
         If the User Criteria is specific about the evaluator and weight: 

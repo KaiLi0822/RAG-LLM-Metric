@@ -24,9 +24,11 @@ hf_urls = [
 # Initialize a list to store all dataframes
 all_dfs = []
 
+
 # First, load and concatenate all dataframes
 for file_path in hf_urls:
     try:
+
         print(f"\nLoading: {file_path}")
         df = pd.read_parquet(file_path)
 
@@ -119,6 +121,7 @@ for dataset in datasets:
             all_results.append(
                 {
                     "Dataset": dataset,
+
                     "Metric": metric,
                     "ground_truth_mean": gt_mean,
                     "ground_truth_variance(s^2)": gt_var,
@@ -199,7 +202,8 @@ for metric in metric_names:
     except KeyError as e:
         print(f"Metric {metric} missing columns in combined dataset. Error: {e}")
 
-# Convert all results to DataFrame and export
+
+# Save to CSV
 final_df = pd.DataFrame(all_results)
 
 # Sort by dataset and metric for better readability

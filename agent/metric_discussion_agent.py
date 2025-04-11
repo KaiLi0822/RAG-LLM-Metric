@@ -28,48 +28,56 @@ from utils.llm import LLMClient, OpenAIClientLLM
 
 def get_evaluator_classes():
     """Retrieve all implemented evaluators derived from RAGEvaluator."""
-    module = importlib.import_module('evaluator.evaluators')
+    module = importlib.import_module("evaluator.evaluators")
     evaluator_classes = []
 
     for _, cls in inspect.getmembers(module, inspect.isclass):
-        if (issubclass(cls, RAGEvaluator) and
-                cls.__module__ == module.__name__ and
-                cls.__name__.endswith('Evaluator') and
-                cls is not RAGEvaluator):
+        if (
+            issubclass(cls, RAGEvaluator)
+            and cls.__module__ == module.__name__
+            and cls.__name__.endswith("Evaluator")
+            and cls is not RAGEvaluator
+        ):
             evaluator_classes.append(cls)
 
     return evaluator_classes
 
 
 def make_valid_identifier(input_str):
-    cleaned_str = re.sub(r'[^a-zA-Z0-9_]', '', input_str)
+    cleaned_str = re.sub(r"[^a-zA-Z0-9_]", "", input_str)
     if cleaned_str and cleaned_str[0].isdigit():
-        cleaned_str = '_' + cleaned_str
-    return cleaned_str if cleaned_str else 'identifier'
+        cleaned_str = "_" + cleaned_str
+    return cleaned_str if cleaned_str else "identifier"
 
 
 def perform_web_search(query: str) -> str:
     """Perform web search using DuckDuckGo and return results as text."""
     with DDGS() as ddgs:
         results = ddgs.text(query, max_results=3)
-        return "\n\n".join([f"Title: {r['title']}\nContent: {r['body']}" for r in results])
+        return "\n\n".join(
+            [f"Title: {r['title']}\nContent: {r['body']}" for r in results]
+        )
 
 
 class DynamicEvaluationOrchestrator:
 
-    def __init__(self,
-                 dataset_name: Optional[str] = None,
-                 dataset_df: Optional[pd.DataFrame] = None,
-                 evaluate_llm_class: type[LLMClient] = OpenAIClientLLM,
-                 evaluate_llm_model: str = "gpt-4o-2024-08-06",
-                 evaluate_llm_base_url: str = "https://api.openai.com/v1",
-                 agent_llm_model: str = "gpt-4o-2024-08-06",
-                 upload_to_hub: bool = True,
-                 repo_name: Optional[str] = None,
-                 max_discussion_round: Optional[int] = 50):
+    def __init__(
+        self,
+        dataset_name: Optional[str] = None,
+        dataset_df: Optional[pd.DataFrame] = None,
+        evaluate_llm_class: type[LLMClient] = OpenAIClientLLM,
+        evaluate_llm_model: str = "gpt-4o-2024-08-06",
+        evaluate_llm_base_url: str = "https://api.openai.com/v1",
+        agent_llm_model: str = "gpt-4o-2024-08-06",
+        upload_to_hub: bool = True,
+        repo_name: Optional[str] = None,
+        max_discussion_round: Optional[int] = 50,
+    ):
         if dataset_name is None:
             if upload_to_hub and repo_name is None:
-                raise ValueError("must offer repo name when uploading result from pandas df to HF")
+                raise ValueError(
+                    "must offer repo name when uploading result from pandas df to HF"
+                )
             self.dataset = dataset_df
         elif dataset_df is None:
             self.dataset = dataset_name
@@ -93,8 +101,11 @@ class DynamicEvaluationOrchestrator:
         self.example_double_checker = self._create_example_double_checker()
         self.group_chat_summarizer = self._create_group_chat_summarizer()
         self.user_proxy = UserProxyAgent(name="UserProxy")
-        self.chat_agent = AssistantAgent(name="ChatAgent", system_message="Your are a helpful assistant",
-                                         model_client=self.model_client)
+        self.chat_agent = AssistantAgent(
+            name="ChatAgent",
+            system_message="Your are a helpful assistant",
+            model_client=self.model_client,
+        )
         self.metric_info = self._get_metrics_metadata()
 
     def _create_model_client(self):
@@ -109,12 +120,16 @@ class DynamicEvaluationOrchestrator:
             },
         )
 
-    def get_sample_data(self, ):
+    def get_sample_data(
+        self,
+    ):
         if isinstance(self.dataset, str):
             try:
                 from datasets import load_dataset
             except ImportError:
-                raise ImportError("Hugging Face datasets library required: pip install datasets")
+                raise ImportError(
+                    "Hugging Face datasets library required: pip install datasets"
+                )
             try:
                 hf_dataset = load_dataset(self.dataset, split="train")
                 # Random sampling with safety check
@@ -126,9 +141,16 @@ class DynamicEvaluationOrchestrator:
 
                 # Generate unique random indices
                 indices = random.sample(range(dataset_size), n_samples)
-                return json.dumps([{"question": hf_dataset[i]["question"],
-                                    "context": hf_dataset[i]["documents"],
-                                    "golden_answer": hf_dataset[i]["response"]} for i in indices])
+                return json.dumps(
+                    [
+                        {
+                            "question": hf_dataset[i]["question"],
+                            "context": hf_dataset[i]["documents"],
+                            "golden_answer": hf_dataset[i]["response"],
+                        }
+                        for i in indices
+                    ]
+                )
 
             except Exception as e:
                 raise ValueError(f"Failed to load dataset: {str(e)}")
@@ -136,9 +158,13 @@ class DynamicEvaluationOrchestrator:
         elif isinstance(self.dataset, pd.DataFrame):
             # Handle pandas DataFrame with random sampling
             n_samples = min(2, len(self.dataset))
-            return json.dumps(self.dataset.sample(n=n_samples).rename(columns={"documents": "context",
-                                                                               "response": "golden_answer"})[
-                                  ["question", "context", "golden_answer"]].to_dict(orient='records'))
+            return json.dumps(
+                self.dataset.sample(n=n_samples)
+                .rename(columns={"documents": "context", "response": "golden_answer"})[
+                    ["question", "context", "golden_answer"]
+                ]
+                .to_dict(orient="records")
+            )
 
         else:
             raise TypeError("Input must be HF dataset name (str) or pandas DataFrame")
@@ -205,35 +231,35 @@ class DynamicEvaluationOrchestrator:
 
                 Proposals must include failure mode and effects analysis.""",
                 model_client=self.model_client,
-            )
+            ),
         }
 
     def _create_search_agent(self) -> AssistantAgent:
         return AssistantAgent(
             name="WebSearchAgent",
             system_message="You are an expert web researcher. Your task is to perform a web search "
-                           "for the given query and prepare a concise summary of the search results. "
-                           "Focus on gathering relevant information that will help in domain identification. "
-                           "Respond with a JSON object containing the search query and search results.",
+            "for the given query and prepare a concise summary of the search results. "
+            "Focus on gathering relevant information that will help in domain identification. "
+            "Respond with a JSON object containing the search query and search results.",
             model_client=self.model_client,
-            tools=[self.web_search_tool]
+            tools=[self.web_search_tool],
         )
 
     def _create_domain_detector(self) -> AssistantAgent:
         return AssistantAgent(
             name="DomainAnalyst",
             system_message="You are an expert at analyzing web search results to identify domain categories. "
-                           "Given the search results from the previous round, carefully extract and categorize "
-                           "the domains represented by the organization or query. "
-                           "Respond ONLY with a JSON object containing:\n"
-                           "- domains (list of str): Precise domain categories\n"
-                           "- reasoning (str): Brief explanation of domain identification\n"
-                           "Example:\n"
-                           "```json\n"
-                           '{"domains": ["technology", "artificial intelligence"], '
-                           '"reasoning": "Company focuses on AI research and software development"}'
-                           "```",
-            model_client=self.model_client
+            "Given the search results from the previous round, carefully extract and categorize "
+            "the domains represented by the organization or query. "
+            "Respond ONLY with a JSON object containing:\n"
+            "- domains (list of str): Precise domain categories\n"
+            "- reasoning (str): Brief explanation of domain identification\n"
+            "Example:\n"
+            "```json\n"
+            '{"domains": ["technology", "artificial intelligence"], '
+            '"reasoning": "Company focuses on AI research and software development"}'
+            "```",
+            model_client=self.model_client,
         )
 
     def _create_group_chat_summarizer(self) -> AssistantAgent:
@@ -247,7 +273,7 @@ class DynamicEvaluationOrchestrator:
                 ],
                 "rationale": "summary"
             }""",
-            model_client=self.model_client
+            model_client=self.model_client,
         )
 
     def _create_example_double_checker(self) -> AssistantAgent:
@@ -263,28 +289,30 @@ class DynamicEvaluationOrchestrator:
             following format to propose your evaluation metrics selections and weights. {{ "evaluators": [ {{
             "evaluator": "ExactClassName", "weight": 0.25}}, ... ], "rationale": "short explanation" }}""",
             tools=[self.read_data_tool],
-            model_client=self.model_client
+            model_client=self.model_client,
         )
 
     def _create_read_data_tool(self) -> FunctionTool:
         return FunctionTool(
-            self.get_sample_data, description="retrieve sample data points from evaluate dataset"
+            self.get_sample_data,
+            description="retrieve sample data points from evaluate dataset",
         )
 
     def _create_web_search_tool(self):
         return FunctionTool(
             perform_web_search,
-            description="Perform web searches to gather domain-specific information"
+            description="Perform web searches to gather domain-specific information",
         )
 
     async def detect_domains(self, criteria: str) -> List[str]:
         # First Round: Web Search
-        search_message = (f"Perform a comprehensive web search about the mentioned organization/company name if user "
-                          f"mentioned in requirements: {criteria}")
+        search_message = (
+            f"Perform a comprehensive web search about the mentioned organization/company name if user "
+            f"mentioned in requirements: {criteria}"
+        )
         cancellation_token = CancellationToken()
         search_response = await self.search_agent.on_messages(
-            [TextMessage(content=search_message, source="system")],
-            cancellation_token
+            [TextMessage(content=search_message, source="system")], cancellation_token
         )
 
         # Extract search results
@@ -297,8 +325,12 @@ class DynamicEvaluationOrchestrator:
 
         # Second Round: Domain Analysis
         analysis_response = await self.domain_detector.on_messages(
-            [TextMessage(content=f"Identify domains in: {criteria}, search_results: {search_results}",
-                         source="system")],
+            [
+                TextMessage(
+                    content=f"Identify domains in: {criteria}, search_results: {search_results}",
+                    source="system",
+                )
+            ],
             cancellation_token,
         )
 
@@ -306,25 +338,29 @@ class DynamicEvaluationOrchestrator:
         try:
             # Try to parse the last message as JSON
             domain_analysis = json.loads(
-                analysis_response.chat_message.content.strip().replace("```json", "").replace("```", ""))
+                analysis_response.chat_message.content.strip()
+                .replace("```json", "")
+                .replace("```", "")
+            )
         except (json.JSONDecodeError, IndexError, KeyError):
             # Fallback to empty result
             domain_analysis = {
                 "domains": [],
-                "reasoning": "Unable to determine domains from search results"
+                "reasoning": "Unable to determine domains from search results",
             }
 
         # Combine search results and domain analysis
         return domain_analysis["domains"]
 
-    async def _generate_domain_expert_persona(self, domain: str, user_criteria: str) -> str:
+    async def _generate_domain_expert_persona(
+        self, domain: str, user_criteria: str
+    ) -> str:
         """Generate system message for domain expert using web search results."""
 
         search_message = f"Perform a comprehensive web search about{domain} domain best practices for {user_criteria}"
         cancellation_token = CancellationToken()
         search_response = await self.search_agent.on_messages(
-            [TextMessage(content=search_message, source="system")],
-            cancellation_token
+            [TextMessage(content=search_message, source="system")], cancellation_token
         )
         search_results = search_response.chat_message.content
 
@@ -342,34 +378,44 @@ class DynamicEvaluationOrchestrator:
         """
 
         response = await self.chat_agent.on_messages(
-            [TextMessage(content=prompt, source="system")],
-            cancellation_token
+            [TextMessage(content=prompt, source="system")], cancellation_token
         )
         return response.chat_message.content
 
-    async def select_domain_agents(self, domains: List[str], user_criteria: str) -> List[AssistantAgent]:
+    async def select_domain_agents(
+        self, domains: List[str], user_criteria: str
+    ) -> List[AssistantAgent]:
         """Dynamically create domain experts with web-powered personas."""
         agents = []
         for domain in domains:
-            system_message = await self._generate_domain_expert_persona(domain, user_criteria)
-            agents.append(AssistantAgent(
-                name=f"{make_valid_identifier(domain.capitalize())}Expert",
-                system_message=system_message,
-                model_client=self.model_client
-            ))
+            system_message = await self._generate_domain_expert_persona(
+                domain, user_criteria
+            )
+            agents.append(
+                AssistantAgent(
+                    name=f"{make_valid_identifier(domain.capitalize())}Expert",
+                    system_message=system_message,
+                    model_client=self.model_client,
+                )
+            )
         return agents
 
     async def negotiate_metrics(self, user_criteria: str) -> Dict:
         domains = await self.detect_domains(user_criteria)
         domain_agents = await self.select_domain_agents(domains, user_criteria)
-        all_agents = list(self.base_agents.values()) + domain_agents + [self.example_double_checker]
-
-        evaluator_list = "\n".join(
-            [f"- {e['name']}: {e['description']}"
-             for e in self.metric_info]
+        all_agents = (
+            list(self.base_agents.values())
+            + domain_agents
+            + [self.example_double_checker]
         )
 
-        termination = MaxMessageTermination(self.max_discussion_round) | TextMentionTermination("TERMINATE DISCUSSION")
+        evaluator_list = "\n".join(
+            [f"- {e['name']}: {e['description']}" for e in self.metric_info]
+        )
+
+        termination = MaxMessageTermination(
+            self.max_discussion_round
+        ) | TextMentionTermination("TERMINATE DISCUSSION")
         group_chat = RoundRobinGroupChat(
             participants=all_agents,
             termination_condition=termination,
@@ -401,33 +447,46 @@ class DynamicEvaluationOrchestrator:
         stream = group_chat.run_stream(task=task)
         task_result = await Console(stream)
 
-        return self._parse_final_decision(await self._summarize_group_chat(task_result, user_criteria))
+        return self._parse_final_decision(
+            await self._summarize_group_chat(task_result, user_criteria)
+        )
 
     async def _summarize_group_chat(self, task_result, user_criteria):
         transcripts = "\n".join(
-            [msg.content for msg in task_result.messages if isinstance(msg, TextMessage)])
+            [
+                msg.content
+                for msg in task_result.messages
+                if isinstance(msg, TextMessage)
+            ]
+        )
         cancellation_token = CancellationToken()
         response = await self.group_chat_summarizer.on_messages(
-            [TextMessage(
-                content=(
-                    f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final "
-                    f"decision\nGROUP_CHAT: {transcripts}"
-                    """Final output MUST be JSON containing:
+            [
+                TextMessage(
+                    content=(
+                        f"Given the user criteria: {user_criteria}\nSummarize the group chat and extract final "
+                        f"decision\nGROUP_CHAT: {transcripts}"
+                        """Final output MUST be JSON containing:
         {{
             "evaluators": [
                 {{"evaluator": "ExactClassName", "weight": 0.25}},
                 ...
             ],
             "rationale": "short explanation"
-        }}"""),
-                source="system")],
+        }}"""
+                    ),
+                    source="system",
+                )
+            ],
             cancellation_token,
         )
         return response.chat_message.content
 
     def _parse_final_decision(self, response: str) -> Dict:
         try:
-            result_dict = json.loads(response.strip().replace("```json", "").replace("```", ""))
+            result_dict = json.loads(
+                response.strip().replace("```json", "").replace("```", "")
+            )
             evaluator_data = result_dict.get("evaluators", [])
 
             evaluator_classes = {cls.__name__: cls for cls in get_evaluator_classes()}
@@ -445,14 +504,18 @@ class DynamicEvaluationOrchestrator:
             self.process_final_decision(evaluator_tuples)
 
             return {
-                "evaluators": [(cls.__name__, weight) for cls, weight in evaluator_tuples],
+                "evaluators": [
+                    (cls.__name__, weight) for cls, weight in evaluator_tuples
+                ],
                 "rationale": self._extract_rationale(response),
-                "classes": evaluator_tuples
+                "classes": evaluator_tuples,
             }
         except Exception as e:
             return {"error": f"Parsing failed: {str(e)}"}
 
-    def _validate_metrics(self, evaluators: List[Tuple[RAGEvaluator, float]]) -> List[str]:
+    def _validate_metrics(
+        self, evaluators: List[Tuple[RAGEvaluator, float]]
+    ) -> List[str]:
         errors = []
         total_weight = sum(w for _, w in evaluators)
         if abs(total_weight - 1.0) > 0.01:
@@ -477,30 +540,40 @@ class DynamicEvaluationOrchestrator:
 
     async def evaluate(self, user_criteria: str):
         final_result = await self.negotiate_metrics(user_criteria=user_criteria)
-        pipeline = CompoundScoreExecutionPipeline(evaluators_with_weights=final_result["classes"])
+        pipeline = CompoundScoreExecutionPipeline(
+            evaluators_with_weights=final_result["classes"]
+        )
         if isinstance(self.dataset, str):
             await pipeline.run_pipeline_with_weight(
                 dataset_name=self.dataset,
-                upload_to_hub=self.upload_to_hub, llm_class=self.evaluate_llm_class,
+                upload_to_hub=self.upload_to_hub,
+                llm_class=self.evaluate_llm_class,
                 repo_id=self.repo_name,
                 model=self.evaluate_llm_model,
-                base_url=self.evaluate_llm_base_url, )
+                base_url=self.evaluate_llm_base_url,
+            )
         else:
             await pipeline.run_pipeline_with_weight(
                 dataset_df=self.dataset,
-                upload_to_hub=self.upload_to_hub, llm_class=self.evaluate_llm_class,
+                upload_to_hub=self.upload_to_hub,
+                llm_class=self.evaluate_llm_class,
                 repo_id=self.repo_name,
                 model=self.evaluate_llm_model,
-                base_url=self.evaluate_llm_base_url, )
+                base_url=self.evaluate_llm_base_url,
+            )
 
 
 async def main():
-    evaluator = DynamicEvaluationOrchestrator(dataset_name="RAGEVALUATION-HJKMY/TSBC_100row_mistake_added",
-                                              evaluate_llm_model="gpt-4o-mini-2024-07-18",
-                                              agent_llm_model="gpt-4o-mini-2024-07-18",
-                                              max_discussion_round=20)
-    await evaluator.evaluate("Please help build evaluate metrics for chatbot run by technical safety BC(TSBC), "
-                             "you need to emphasize on the correctness and completeness")
+    evaluator = DynamicEvaluationOrchestrator(
+        dataset_name="RAGEVALUATION-HJKMY/TSBC_100row_mistake_added",
+        evaluate_llm_model="gpt-4o-mini-2024-07-18",
+        agent_llm_model="gpt-4o-mini-2024-07-18",
+        max_discussion_round=20,
+    )
+    await evaluator.evaluate(
+        "Please help build evaluate metrics for chatbot run by technical safety BC(TSBC), "
+        "you need to emphasize on the correctness and completeness"
+    )
 
 
 if __name__ == "__main__":

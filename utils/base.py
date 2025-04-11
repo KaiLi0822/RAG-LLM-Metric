@@ -8,20 +8,20 @@ class BasePrompt(Enum):
 
     @property
     def template(self) -> str | Callable[..., str]:
-        return self.value['template']
+        return self.value["template"]
 
     @property
     def criteria(self) -> str | Callable[..., str]:
-        return self.value.get('criteria', '')
+        return self.value.get("criteria", "")
 
     @property
     def formatter(self) -> str | Callable[..., str]:
-        return self.value['formatter']
+        return self.value["formatter"]
 
     @property
     def examples(self) -> str | Callable[..., str]:
-        return self.value.get('examples', '')
+        return self.value.get("examples", "")
 
     @classmethod
-    def get_prompt_type(cls, name: str) -> 'BasePrompt':
+    def get_prompt_type(cls, name: str) -> "BasePrompt":
         return cls[name.upper()]

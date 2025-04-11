@@ -12,12 +12,10 @@ import asyncio
 class RAGEvaluator(ABC):
     """Base class for evaluating RAG outputs using LLM-as-a-judge pattern."""
 
-    def __init__(
-        self,
-        llm_class: type[LLMClient] = None,
-        **llm_kwargs
-    ):
-        self.llm = llm_class(**llm_kwargs) if llm_class else OpenAIClientLLM(**llm_kwargs)
+    def __init__(self, llm_class: type[LLMClient] = None, **llm_kwargs):
+        self.llm = (
+            llm_class(**llm_kwargs) if llm_class else OpenAIClientLLM(**llm_kwargs)
+        )
 
     async def process_split(self, split_dataset: Dataset) -> Dict:
         """Process a single split asynchronously"""
@@ -28,7 +26,7 @@ class RAGEvaluator(ABC):
 
     async def process_row(self, row: Dict, semaphore: asyncio.Semaphore) -> Dict:
         """Process a single example with rate limiting
-           return: Dict of annotation_name(key): annotation_value
+        return: Dict of annotation_name(key): annotation_value
         """
         async with semaphore:
             processed = self.pre_process_row(row)
@@ -49,17 +47,22 @@ class RAGEvaluator(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def pre_process(self, question: str | List[str], context: str | List[str], answer: str | List[str],
-                    **kwargs) -> Any:
+    def pre_process(
+        self,
+        question: str | List[str],
+        context: str | List[str],
+        answer: str | List[str],
+        **kwargs,
+    ) -> Any:
         """
         Prepare and format the evaluation input.
-        
+
         Args:
             question: User question/query
             context: Retrieved context used for generation
             answer: Generated answer to evaluate
             kwargs: Additional template parameters (golded_answer)
-            
+
         Returns:
             Processed data ready for LLM evaluation
         """
@@ -69,10 +72,10 @@ class RAGEvaluator(ABC):
     def call_llm(self, processed_data: Any) -> str:
         """
         Execute the LLM call with the processed evaluation prompt.
-        
+
         Args:
             processed_data: Formatted evaluation prompt from pre_process
-            
+
         Returns:
             Raw LLM response string
         """
@@ -82,26 +85,31 @@ class RAGEvaluator(ABC):
     def post_process(self, llm_response: str, **kwargs) -> Dict[str, float]:
         """
         Convert LLM response into evaluation scores.
-        
+
         Args:
             llm_response: Raw response string from LLM
-            
+
         Returns:
             Dictionary of evaluation metrics and scores
         """
         pass
 
-    def evaluate(self, answer: str | List[str] = None, question: str | List[str] = None,
-                 context: str | List[str] = None, **kwargs) -> Dict:
+    def evaluate(
+        self,
+        answer: str | List[str] = None,
+        question: str | List[str] = None,
+        context: str | List[str] = None,
+        **kwargs,
+    ) -> Dict:
         """
         Main evaluation workflow.
-        
+
         Args:
             question: User question/query
             context: Retrieved context used for generation
             answer: Generated answer to evaluate
             kwargs: Additional template parameters (golded_answer)
-            
+
         Returns:
             Dictionary of evaluation metrics and scores
         """

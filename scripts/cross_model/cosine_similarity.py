@@ -9,7 +9,7 @@ input_folder = "analysis_data/cross_model/data_cleaning"  # Replace with your fo
 output_folder = "analysis_data/cross_model/cosine_similarity"
 os.makedirs(output_folder, exist_ok=True)
 
-models = ['deepseek7b', 'llama8b', 'mistral8b', 'qwen7b']
+models = ["deepseek7b", "llama8b", "mistral8b", "qwen7b"]
 model_pairs = list(combinations(models, 2))
 
 # Process each file
@@ -28,7 +28,11 @@ for filename in os.listdir(input_folder):
 
         # Precompute columns per model (once, outside the loop)
         model_col_map = {
-            model: [col for col in df_selected.columns if model in col and "_cos_sim" not in col]
+            model: [
+                col
+                for col in df_selected.columns
+                if model in col and "_cos_sim" not in col
+            ]
             for model in models
         }
 

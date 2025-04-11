@@ -6,18 +6,20 @@ from datasets import Dataset
 from utils.llm import LLMClient, OpenAIClientLLM
 from data_annotator.prompt_manager import AnnotatePromptManager
 import logging
+
 logger = logging.getLogger(__name__)
 
 
 class DataAnnotator(ABC):
     def __init__(
-        self,
-        llm_class: type[LLMClient] = None,
-        annotation_columns=None,
-        **llm_kwargs
+        self, llm_class: type[LLMClient] = None, annotation_columns=None, **llm_kwargs
     ):
-        self.annotation_columns = ["llm_annotation"] if annotation_columns is None else annotation_columns
-        self.llm = llm_class(**llm_kwargs) if llm_class else OpenAIClientLLM(**llm_kwargs)
+        self.annotation_columns = (
+            ["llm_annotation"] if annotation_columns is None else annotation_columns
+        )
+        self.llm = (
+            llm_class(**llm_kwargs) if llm_class else OpenAIClientLLM(**llm_kwargs)
+        )
 
     async def process_split(self, split_dataset: Dataset) -> Dict:
         """Process a single split asynchronously"""
@@ -28,7 +30,7 @@ class DataAnnotator(ABC):
 
     async def process_row(self, row: Dict, semaphore: asyncio.Semaphore) -> Dict:
         """Process a single example with rate limiting
-           return: Dict of annotation_name(key): annotation_value
+        return: Dict of annotation_name(key): annotation_value
         """
         async with semaphore:
             processed = self.pre_process(row)

@@ -76,6 +76,8 @@ class OpenAIClientLLM(LLMClient):
         self.model = model
         self.system_message = system_message
         self.params = {
+            "reasoning_effort": "medium"
+        } if ("o1" in self.model or "o3" in self.model) else {
             "temperature": 0.7,
             "max_tokens": 2000,
             "top_p": 1,

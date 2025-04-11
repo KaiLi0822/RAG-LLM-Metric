@@ -38,7 +38,7 @@ async def main():
     pipeline = ExecutionPipeline([FactualAccuracyEvaluator])
     return await pipeline.run_pipeline(dataset_name=DATASET_NAME, save_path="./tmp_data", upload_to_hub=True,
                                 repo_id="RAGEVALUATION-HJKMY/TSBC_cleaned_demo_experiment",
-                                llm_class=OpenAIClientLLM, model="gpt-4o-mini-2024-07-18",
+                                llm_class=OpenAIClientLLM, model="o1-2024-12-17",
                                 base_url="https://api.openai.com/v1/")
 if __name__ == "__main__":
     print(asyncio.run(main())['train'].to_pandas())

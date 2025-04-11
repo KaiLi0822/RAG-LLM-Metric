@@ -3,12 +3,15 @@ from enum import Enum, auto
 from typing import Dict, Any
 from utils.base import BasePrompt
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class EvaluationType(BasePrompt):
     """Enumeration of different evaluation prompt types with JSON formatting"""
+
     ANSWER_EQUIVALENCE = {
-        'template': (
+        "template": (
             "Evaluate the given two answers to the question and context by carefully answer the given 4 questions, and give a brief reason on you decision.\n"
             "question: {question}\nContext: {context}\n"
             "first answer: {golden_answer}\n"
@@ -16,13 +19,13 @@ class EvaluationType(BasePrompt):
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Is the second answer a completely different answer?\n"
             "2. Would using the second answer in place of the first answer convey at least the same information to someone asking this question, without leaving out any important information nor adding any misleading or superfluous information?\n"
             "3. Does the second answer remove important information?\n"
             "4. Does the second answer add misleading or excessive superfluous information?"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- Q1 (string of yes or no)\n"
             "- Q2 (string of yes or no)\n"
@@ -33,22 +36,22 @@ class EvaluationType(BasePrompt):
             "```json\n"
             '{"Q1": "yes", "Q2": "no", "Q3": "no", "Q4": "no", "reasons": "the second answer contradict with the first answer"}\n'
             "```"
-        )
+        ),
     }
-    
+
     RELEVANCE = {
-        'template': (
+        "template": (
             "Evaluate the relevance of the answer to the question and context.\n"
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Does the answer directly address the question?\n"
             "2. Is the answer supported by the provided context?\n"
             "3. Does the answer stay focused on the key points?"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- relevance_score (float between 0-1)\n"
             "- reasons (array of 3 short strings)\n"
@@ -58,21 +61,21 @@ class EvaluationType(BasePrompt):
             '{"relevance_score": 0.85, "reasons": ["Directly addresses question", '
             '"Uses context effectively", "Stays focused"], "confidence": 0.92}\n'
             "```"
-        )
+        ),
     }
-    
+
     COHERENCE = {
-        'template': (
+        "template": (
             "Assess the coherence and clarity of the answer.\n"
             "Question: {question}\nAnswer: {answer}\n"
             "Consider these aspects: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Logical flow of ideas\n2. Grammatical correctness\n"
             "3. Readability and structure\n4. Consistency within the answer"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- coherence_score (float between 0-1)\n"
             "- strengths (array of 2 short strings)\n"
@@ -82,21 +85,21 @@ class EvaluationType(BasePrompt):
             '{"coherence_score": 0.78, "strengths": ["Clear structure", "Good transitions"], '
             '"weaknesses": ["Some run-on sentences", "Abrupt conclusion"], "confidence": 0.88}\n'
             "```"
-        )
+        ),
     }
-    
+
     FACTUAL_ACCURACY = {
-        'template': (
+        "template": (
             "Evaluate the factual accuracy based on the provided context.\n"
             "Context: {context}\nAnswer: {answer}\n"
             "Accuracy criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Alignment with contextual facts\n2. Absence of contradictions\n"
             "3. Support from authoritative sources (if applicable)"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- accuracy_score (float between 0-1)\n"
             "- supported_claims (array of strings)\n"
@@ -107,23 +110,23 @@ class EvaluationType(BasePrompt):
             '"CO2 impact"], "unsupported_claims": ["Mention of solar flares"], '
             '"confidence": 0.95}\n'
             "```"
-        )
+        ),
     }
-    
+
     REFUSAL = {
-        'template': (
+        "template": (
             "Check if the model's answer correctly indicates the model cannot answer the question due to lack of information in the reference context."
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "Output verdict as `1` if the context contains sufficient information for the question and model follows the question and successfully answers the question\n"
             "Output verdict as `-1` if the context contains sufficient information for the question "
             "but model rejects to answer the question due to any reason or mentions the request cannot be answered.\n"
             "Output verdict as `0` if the context does not contains sufficient information"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- refusal (int from [-1, 0, 1])\n"
             "- reason (string)\n"
@@ -131,11 +134,11 @@ class EvaluationType(BasePrompt):
             "```json\n"
             '{"refusal": 0, "reason": "The model indicates it cannot answer the question due to lack of knowledge and suggest the user to contact a human agent"}\n'
             "```"
-        )
+        ),
     }
-    
-    UNDERSPECIFICATION_CHECK  =  {
-        'template': (
+
+    UNDERSPECIFICATION_CHECK = {
+        "template": (
             "Check whether the model's response of an underspecificationd query is acceptable, given the question and context"
             "Output verdict as 1 if the model's response is acceptable', 0 if the model's response is unacceptable."
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
@@ -148,7 +151,7 @@ class EvaluationType(BasePrompt):
             "Unacceptable: The model directly follows the request, providing a single answer to question without any disclaimers, "
             "or challenging the underspecified nature of the request, or questioning the accuracy of its responses."
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- underspecification_check (int from [0, 1])\n"
             "- reason (string)\n"
@@ -156,25 +159,24 @@ class EvaluationType(BasePrompt):
             "```json\n"
             '{"underspecification_check": 1, "reason": "The model asked for specification for an underspecified query"}\n'
             "```"
-        )
-        
+        ),
     }
 
     LEARNING_FACILITATION = {
-        'template': (
+        "template": (
             "Evaluate how well the answer facilitates learning and education.\n"
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these aspects: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Clarity of explanations\n"
             "2. Use of examples or analogies\n"
             "3. Depth of information provided\n"
             "4. Encouragement of further inquiry\n"
             "5. Accessibility to the target audience"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- learning_facilitation_score (float between 0-1)\n"
             "- educational_strengths (array of strings)\n"
@@ -186,24 +188,24 @@ class EvaluationType(BasePrompt):
             '"areas_for_improvement": ["More depth needed", "Add visual aids"], '
             '"confidence": 0.92}\n'
             "```"
-        )
+        ),
     }
 
     ENGAGEMENT_INDEX = {
-        'template': (
+        "template": (
             "Evaluate how engaging and interesting the answer is.\n"
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider these aspects: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Captivating introduction\n"
             "2. Use of vivid language or imagery\n"
             "3. Inclusion of interesting facts or perspectives\n"
             "4. Narrative flow or storytelling elements\n"
             "5. Relevance to reader's interests or real-world applications"
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- engagement_score (float between 0-1)\n"
             "- engaging_elements (array of strings)\n"
@@ -215,11 +217,11 @@ class EvaluationType(BasePrompt):
             '"suggestions_for_improvement": ["Add more surprising facts", "Incorporate a brief anecdote"], '
             '"confidence": 0.89}\n'
             "```"
-        )
+        ),
     }
-    
+
     KEY_POINT = {
-        'template' : (
+        "template": (
             "In this task, you will receive a question, a generated answer, and key points from a standard answer. "
             "Please categorize each key point based on the generated answer into one of the following categories: complete_ids, irrelevant_ids, or hallucinate_ids. "
             "Return the results in the given JSON format, where complete_ids, irrelevant_ids, hallucinate_ids are "
@@ -230,12 +232,12 @@ class EvaluationType(BasePrompt):
             "Consider these criteria: {criteria}\n\n and give some brief reasoning on why you make such decision"
             "{formatter}"
         ),
-        "criteria" : (
+        "criteria": (
             "- complete_ids: Indices of key points that are relevant and consistent with the standard answer."
             "- irrelevant_ids: Indices of key points that are not covered or mentioned in the generated answer."
             "- hallucinate_ids: Indices of key points that are incorrectly addressed or contain significant errors in the generated answer."
         ),
-        "formatter" : (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- complete_ids (list of int)\n"
             "- irrelevant_ids (list of int)\n"
@@ -246,20 +248,19 @@ class EvaluationType(BasePrompt):
             '{"complete_ids": [1, 2], "irrelevant_ids": [3, 4, 5], "hallucinate_ids": [6]'
             '"reasons": "generated answer covers the the deadline mentioned in key_point 1 and product name in key_point2.'
             'It does not cover key_point 3, 4, 5 and it is incorrect about the company named mentioned in key_point 6"}'
-            "```" 
-        )
+            "```"
+        ),
     }
 
-
     CONTEXT_RELEVANCE = {
-        'template': (
+        "template": (
             "Evaluate the context relevance of the retrieved context compared to the input question.\n"
             "Input Question: {question}\n"
             "Retrieved Context: {context}\n"
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Identify key information in the input question that requires context for a relevant answer.\n"
             "2. Classify context segments as:\n"
             "   - Relevant (R): Directly supports answering the input question.\n"
@@ -268,7 +269,7 @@ class EvaluationType(BasePrompt):
             "4. Focus on whether the retrieved context adds meaningful, related details to the question.\n"
             "5. Assign a relevance score between 0 and 1 indicating the degree of relevance, where 1 means highly relevant and 0 means completely irrelevant."
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- extracted_context (object with 'relevant' and 'irrelevant' arrays of key context segments)\n"
             "- R (integer): Number of relevant context segments\n"
@@ -277,30 +278,29 @@ class EvaluationType(BasePrompt):
             "- reasons (array of 3 short strings explaining the classification and the relevance score)\n"
             "Example:\n"
             "```json\n"
-            '{\n'
+            "{\n"
             '  "extracted_context": {\n'
             '    "relevant": ["The Eiffel Tower is a landmark in Paris", "It attracts millions of visitors annually"],\n'
             '    "irrelevant": ["The Leaning Tower of Pisa is in Italy", "Mount Everest is the tallest mountain"]\n'
-            '  },\n'
+            "  },\n"
             '  "R": 2,\n'
             '  "IR": 2,\n'
             '  "relevance_score": 0.75,\n'
             '  "reasons": ["Relevant facts directly describe the Eiffel Tower", "Irrelevant facts mention unrelated landmarks", "High relevance due to sufficient context provided"]\n'
-            '}\n'
+            "}\n"
             "```"
-        )
+        ),
     }
-    
+
     FACTUAL_CORRECTNESS = {
-        'template': (
+        "template": (
             "Evaluate the factual correctness of the generated answer compared to the golden (ground truth) answer.\n"
             "Golden Answer: {golden_answer}\n"
             "Generated Answer: {answer}\n"
-
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Identify factual statements in both the golden answer and the generated answer.\n"
             "2. Classify statements as:\n"
             "   - True Positives (TP): Present in both answers.\n"
@@ -308,7 +308,7 @@ class EvaluationType(BasePrompt):
             "   - False Negatives (FN): Present in the golden answer but missing in the generated answer.\n"
             "3. Ensure factual accuracy without adding or omitting key facts."
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- extracted_statements (object with 'golden' and 'generated' arrays of key factual statements)\n"
             "- TP (integer): Number of True Positive statements\n"
@@ -317,22 +317,22 @@ class EvaluationType(BasePrompt):
             "- reasons (array of 3 short strings explaining the score)\n"
             "Example:\n"
             "```json\n"
-            '{\n'
+            "{\n"
             '  "extracted_statements": {\n'
             '    "golden": ["The Eiffel Tower is in Paris", "It was built in 1889"],\n'
             '    "generated": ["The Eiffel Tower is in Paris", "It was built in 1890"]\n'
-            '  },\n'
+            "  },\n"
             '  "TP": 1,\n'
             '  "FP": 1,\n'
             '  "FN": 1,\n'
             '  "reasons": ["Correct location mentioned", "Incorrect construction year", "Missed one key fact"]\n'
-            '}\n'
+            "}\n"
             "```"
-        )
+        ),
     }
 
     ADHERENCE_FAITHFULNESS = {
-        'template': (
+        "template": (
             "Evaluate the faithfulness or adherence of the generated answer to the provided context.\n"
             "Question: {question}\n"
             "Context: {context}\n"
@@ -342,12 +342,12 @@ class EvaluationType(BasePrompt):
             "Consider these criteria: {criteria}\n\n"
             "{formatter}"
         ),
-        'criteria': (
+        "criteria": (
             "1. Check if all factual claims or statements in the generated answer appear or are supported by the context.\n"
             "2. Identify any additional information not derivable from the context (hallucinations).\n"
             "3. Provide an overall faithfulness_score between 0.0 (completely unfaithful) and 1.0 (fully faithful)."
         ),
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- faithfulness_score (float between 0 and 1)\n"
             "- unfaithful_segments (array of strings) listing any ungrounded or hallucinatory parts\n"
@@ -355,34 +355,30 @@ class EvaluationType(BasePrompt):
             "Example:\n"
             "```json\n"
             "{\n"
-            "  \"faithfulness_score\": 0.75,\n"
-            "  \"unfaithful_segments\": [\"Mention of brand new data not in context\"],\n"
-            "  \"reasons\": [\"Mostly grounded\", \"One detail not found in context\", \"Answer is partially incomplete\"]\n"
+            '  "faithfulness_score": 0.75,\n'
+            '  "unfaithful_segments": ["Mention of brand new data not in context"],\n'
+            '  "reasons": ["Mostly grounded", "One detail not found in context", "Answer is partially incomplete"]\n'
             "}\n"
             "```"
-        )
+        ),
     }
     ...
 
-
-
     CONTEXT_UTILIZATION = {
-        'template': (
+        "template": (
             "Analyze the context documents in relation to the generated response.\n"
             "Identify which documents contain relevant information used in the response and which do not.\n\n"
             "Question: {question}\nContext: {context}\nAnswer: {answer}\n"
             "Consider the following criteria: {criteria}\n\n"
             "{formatter}"
         ),
-
-        'criteria': (
+        "criteria": (
             "1. A document is relevant if any of its information is directly referenced or paraphrased in the answer.\n"
             "2. A document is irrelevant if none of its information contributes to forming the answer.\n"
             "3. Ensure classification is based on explicit or implicit content alignment between the context and the answer.\n"
             "4. Do NOT include any information in `relevant_context` that is not explicitly present in the original context."
         ),
-
-        'formatter': (
+        "formatter": (
             "Respond ONLY with a JSON object containing:\n"
             "- `context_number` (int)\n"
             "- `relevant_context_number` (int)\n"
@@ -395,7 +391,7 @@ class EvaluationType(BasePrompt):
             '  "irrelevant_context_number": 1\n'
             "}\n"
             "```"
-        )
+        ),
     }
 
 
@@ -411,7 +407,7 @@ class EvalPromptManager:
         question: str = None,
         context: str = None,
         eval_type: EvaluationType = None,
-        **kwargs
+        **kwargs,
     ) -> str:
         """
         Construct an evaluation prompt with JSON formatting instructions
@@ -434,26 +430,26 @@ class EvalPromptManager:
             answer=answer,
             criteria=eval_type.criteria,
             formatter=eval_type.formatter,
-            **kwargs
+            **kwargs,
         )
-    
+
 
 # Example usage
 if __name__ == "__main__":
     # Create prompt manager with default evaluation type
     pm = EvalPromptManager(default_type=EvaluationType.RELEVANCE)
-    
+
     # Build a relevance evaluation prompt
     question = "What causes climate change?"
     context = "Scientific consensus attributes climate change to human activities..."
     answer = "Burning fossil fuels releases greenhouse gases that trap heat."
-    
+
     prompt = pm.build_prompt(
         question=question,
         context=context,
         answer=answer,
-        eval_type=EvaluationType.RELEVANCE
+        eval_type=EvaluationType.RELEVANCE,
     )
-    
+
     logger.info("Relevance Evaluation Prompt:")
     logger.info(prompt)

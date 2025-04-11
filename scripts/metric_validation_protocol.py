@@ -11,12 +11,11 @@ hf_urls = [
     "hf://datasets/RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_techqa_400row_mistake_added/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_delucionqa_400row_mistake_added/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/DeepSeek7b_ragbench_emanual_400row_mistake_added/data/train-00000-of-00001.parquet",
-    
     # Mistral8b
     "hf://datasets/RAGEVALUATION-HJKMY/Mistral8b_ragbench_techqa_400row_mistake_added/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/Mistral8b_ragbench_emanual_400row_mistake_added/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/Mistral8b_ragbench_delucionqa_400row_mistake_added/data/train-00000-of-00001.parquet",
-    #llama8b
+    # llama8b
     "hf://datasets/RAGEVALUATION-HJKMY/Llama8b_ragbench_techqa_400row_mistake_added_evaluated/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/Llama8b_ragbench_delucionqa_400row_mistake_added/data/train-00000-of-00001.parquet",
     "hf://datasets/RAGEVALUATION-HJKMY/Llama8b_ragbench_emanual_400row_mistake_added_evaluated/data/train-00000-of-00001.parquet",
@@ -37,7 +36,7 @@ for file_path in hf_urls:
         dataset_name = parts[2] if len(parts) >= 3 else "Unknown"
 
         # Add dataset column to the dataframe (no model column)
-        df['dataset'] = dataset_name
+        df["dataset"] = dataset_name
 
         # Store the dataframe for later concatenation
         all_dfs.append(df)
@@ -58,18 +57,26 @@ else:
 all_results = []
 
 # Identify all datasets in the combined data
-datasets = combined_df['dataset'].unique()
+datasets = combined_df["dataset"].unique()
 
 # Get metric names from the combined dataframe
-metric_columns = [col for col in combined_df.columns if col.startswith("ground_truth_") and col.endswith("_score")]
-metric_names = [col.replace("ground_truth_", "").replace("_score", "") for col in metric_columns]
+metric_columns = [
+    col
+    for col in combined_df.columns
+    if col.startswith("ground_truth_") and col.endswith("_score")
+]
+metric_names = [
+    col.replace("ground_truth_", "").replace("_score", "") for col in metric_columns
+]
 
-print(f"\nCalculating metrics for {len(metric_names)} metrics across {len(datasets)} datasets...")
+print(
+    f"\nCalculating metrics for {len(metric_names)} metrics across {len(datasets)} datasets..."
+)
 
 # Calculate metrics for each dataset and metric (no model dimension)
 for dataset in datasets:
     # Filter the combined dataframe
-    filtered_df = combined_df[combined_df['dataset'] == dataset]
+    filtered_df = combined_df[combined_df["dataset"] == dataset]
 
     if filtered_df.empty:
         print(f"No data for dataset {dataset}. Skipping...")
@@ -100,31 +107,35 @@ for dataset in datasets:
             in_sigma = in_scores.var(ddof=0)
 
             # Calculate Cohen's d using pooled standard deviation
-            pooled_sd = np.sqrt((gt_var * (len(gt_scores) - 1) + in_var * (len(in_scores) - 1)) /
-                                (len(gt_scores) + len(in_scores) - 2))
+            pooled_sd = np.sqrt(
+                (gt_var * (len(gt_scores) - 1) + in_var * (len(in_scores) - 1))
+                / (len(gt_scores) + len(in_scores) - 2)
+            )
             cohen_d = (gt_mean - in_mean) / pooled_sd if pooled_sd != 0 else np.nan
 
             # Calculate Variance Ratio (VR)
             vr = re_sigma / gt_sigma if gt_sigma != 0 else np.nan
 
-            all_results.append({
-                "Dataset": dataset,
-                "Metric": metric,
-                "ground_truth_mean": gt_mean,
-                "ground_truth_variance(s^2)": gt_var,
-                "ground_truth_variance(sigma^2)": gt_sigma,
-                "rewrite_mean": re_mean,
-                "rewrite_variance(s^2)": re_var,
-                "rewrite_variance(sigma^2)": re_sigma,
-                "wrong_mean": in_mean,
-                "wrong_variance(s^2)": in_var,
-                "wrong_variance(sigma^2)": in_sigma,
-                "Cohen's d": cohen_d,
-                "VR": vr,
-                "n_ground_truth": len(gt_scores),
-                "n_rewrite": len(re_scores),
-                "n_wrong": len(in_scores)
-            })
+            all_results.append(
+                {
+                    "Dataset": dataset,
+                    "Metric": metric,
+                    "ground_truth_mean": gt_mean,
+                    "ground_truth_variance(s^2)": gt_var,
+                    "ground_truth_variance(sigma^2)": gt_sigma,
+                    "rewrite_mean": re_mean,
+                    "rewrite_variance(s^2)": re_var,
+                    "rewrite_variance(sigma^2)": re_sigma,
+                    "wrong_mean": in_mean,
+                    "wrong_variance(s^2)": in_var,
+                    "wrong_variance(sigma^2)": in_sigma,
+                    "Cohen's d": cohen_d,
+                    "VR": vr,
+                    "n_ground_truth": len(gt_scores),
+                    "n_rewrite": len(re_scores),
+                    "n_wrong": len(in_scores),
+                }
+            )
         except KeyError as e:
             print(f"Metric {metric} missing columns for {dataset}. Error: {e}")
 
@@ -156,31 +167,35 @@ for metric in metric_names:
         in_sigma = in_scores.var(ddof=0)
 
         # Calculate Cohen's d
-        pooled_sd = np.sqrt((gt_var * (len(gt_scores) - 1) + in_var * (len(in_scores) - 1)) /
-                            (len(gt_scores) + len(in_scores) - 2))
+        pooled_sd = np.sqrt(
+            (gt_var * (len(gt_scores) - 1) + in_var * (len(in_scores) - 1))
+            / (len(gt_scores) + len(in_scores) - 2)
+        )
         cohen_d = (gt_mean - in_mean) / pooled_sd if pooled_sd != 0 else np.nan
 
         # Calculate VR
         vr = re_sigma / gt_sigma if gt_sigma != 0 else np.nan
 
-        all_results.append({
-            "Dataset": "ALL",
-            "Metric": metric,
-            "ground_truth_mean": gt_mean,
-            "ground_truth_variance(s^2)": gt_var,
-            "ground_truth_variance(sigma^2)": gt_sigma,
-            "rewrite_mean": re_mean,
-            "rewrite_variance(s^2)": re_var,
-            "rewrite_variance(sigma^2)": re_sigma,
-            "wrong_mean": in_mean,
-            "wrong_variance(s^2)": in_var,
-            "wrong_variance(sigma^2)": in_sigma,
-            "Cohen's d": cohen_d,
-            "VR": vr,
-            "n_ground_truth": len(gt_scores),
-            "n_rewrite": len(re_scores),
-            "n_wrong": len(in_scores)
-        })
+        all_results.append(
+            {
+                "Dataset": "ALL",
+                "Metric": metric,
+                "ground_truth_mean": gt_mean,
+                "ground_truth_variance(s^2)": gt_var,
+                "ground_truth_variance(sigma^2)": gt_sigma,
+                "rewrite_mean": re_mean,
+                "rewrite_variance(s^2)": re_var,
+                "rewrite_variance(sigma^2)": re_sigma,
+                "wrong_mean": in_mean,
+                "wrong_variance(s^2)": in_var,
+                "wrong_variance(sigma^2)": in_sigma,
+                "Cohen's d": cohen_d,
+                "VR": vr,
+                "n_ground_truth": len(gt_scores),
+                "n_rewrite": len(re_scores),
+                "n_wrong": len(in_scores),
+            }
+        )
     except KeyError as e:
         print(f"Metric {metric} missing columns in combined dataset. Error: {e}")
 
@@ -188,7 +203,7 @@ for metric in metric_names:
 final_df = pd.DataFrame(all_results)
 
 # Sort by dataset and metric for better readability
-final_df = final_df.sort_values(by=['Dataset', 'Metric'])
+final_df = final_df.sort_values(by=["Dataset", "Metric"])
 
 # Export statistics
 final_df.to_csv("metric_validation_summary_by_dataset.csv", index=False)
@@ -196,10 +211,7 @@ print("✅ Saved: metric_validation_summary_by_dataset.csv")
 
 # Create a pivot table for easier cross-comparisons
 pivot_df = final_df.pivot_table(
-    index=['Dataset'],
-    columns='Metric',
-    values=['Cohen\'s d', 'VR'],
-    aggfunc='first'
+    index=["Dataset"], columns="Metric", values=["Cohen's d", "VR"], aggfunc="first"
 )
 
 # Export the pivot table

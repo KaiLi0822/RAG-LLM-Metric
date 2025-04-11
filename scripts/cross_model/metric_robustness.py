@@ -8,12 +8,12 @@ COSINE_THRESHOLD = 0.95
 
 # All possible cosine similarity columns
 all_sim_cols = [
-    'deepseek7b_llama8b_cos_sim',
-    'deepseek7b_mistral8b_cos_sim',
-    'deepseek7b_qwen7b_cos_sim',
-    'llama8b_mistral8b_cos_sim',
-    'llama8b_qwen7b_cos_sim',
-    'mistral8b_qwen7b_cos_sim'
+    "deepseek7b_llama8b_cos_sim",
+    "deepseek7b_mistral8b_cos_sim",
+    "deepseek7b_qwen7b_cos_sim",
+    "llama8b_mistral8b_cos_sim",
+    "llama8b_qwen7b_cos_sim",
+    "mistral8b_qwen7b_cos_sim",
 ]
 
 results = []
@@ -49,14 +49,16 @@ for filename in os.listdir(input_folder):
 
         passrate = passed_rows / valid_row_count if valid_row_count > 0 else 0.0
 
-        results.append({
-            "metric": os.path.splitext(filename)[0],
-            "passrate": passrate,
-            "passed_row_counts": passed_rows,
-            "valid_row_counts": valid_row_count,
-            "invalid_row_counts": invalid_row_count,
-            "all_rows": all_rows
-        })
+        results.append(
+            {
+                "metric": os.path.splitext(filename)[0],
+                "passrate": passrate,
+                "passed_row_counts": passed_rows,
+                "valid_row_counts": valid_row_count,
+                "invalid_row_counts": invalid_row_count,
+                "all_rows": all_rows,
+            }
+        )
 
 # Save results
 results_df = pd.DataFrame(results)

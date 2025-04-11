@@ -6,38 +6,30 @@ from datasets import load_dataset
 
 # 1. LOAD DATASETS (DeepSeek7b, 3 Domains)
 techqa = load_dataset(
-    "RAGEVALUATION-HJKMY/Llama8b_ragbench_techqa_400row_mistake_added",
-    split="train"
+    "RAGEVALUATION-HJKMY/Llama8b_ragbench_techqa_400row_mistake_added", split="train"
 ).to_pandas()
 
 emanual = load_dataset(
-    "RAGEVALUATION-HJKMY/Llama8b_ragbench_emanual_400row_mistake_added",
-    split="train"
+    "RAGEVALUATION-HJKMY/Llama8b_ragbench_emanual_400row_mistake_added", split="train"
 ).to_pandas()
 
 delucionqa = load_dataset(
     "RAGEVALUATION-HJKMY/Llama8b_ragbench_delucionqa_400row_mistake_added",
-    split="train"
+    split="train",
 ).to_pandas()
 
 # Put them into a dictionary for convenience
-domain_dfs = {
-    "techqa": techqa,
-    "emanual": emanual,
-    "delucionqa": delucionqa
-}
+domain_dfs = {"techqa": techqa, "emanual": emanual, "delucionqa": delucionqa}
 
 # 2. DETECT METRIC NAMES AUTOMATICALLY
 # Using regex to find columns that start with Correct_, Incorrect_, ground_truth_
-metric_pattern = re.compile(r'^(Correct|Incorrect|ground_truth)_(.+)$')
+metric_pattern = re.compile(r"^(Correct|Incorrect|ground_truth)_(.+)$")
 sample_cols = techqa.columns.tolist()
 
 # This will extract the second capture group (the metric name after the underscore)
-metric_names = sorted({
-    match.group(2)
-    for col in sample_cols
-    if (match := metric_pattern.match(col))
-})
+metric_names = sorted(
+    {match.group(2) for col in sample_cols if (match := metric_pattern.match(col))}
+)
 
 print("Detected metric_names:", metric_names)
 
@@ -79,13 +71,14 @@ custom_thresholds = {
     "learning_facilitation_learning_facilitation_score": 0.6,
     # 14. Refusal Accuracy
     #     (If it is an int for correct/incorrect, you might set it to 1 for passing.)
-    "refusal_accuracy_refusal_accuracy": 1.0
+    "refusal_accuracy_refusal_accuracy": 1.0,
 }
 
 default_threshold = 0.5  # used if not found in custom_thresholds
 
 
 # 4. HELPER FUNCTION: Calculate Pass Rate
+
 
 def calculate_pass_rate(df, metric_col, threshold):
     """
@@ -110,8 +103,8 @@ model_name = "DeepSeek7b"
 for metric in metric_names:
     # The dataset columns are "Correct_<metric>", "Incorrect_<metric>", "ground_truth_<metric>"
     rewrite_col = f"Correct_{metric}"
-    wrong_col   = f"Incorrect_{metric}"
-    gt_col      = f"ground_truth_{metric}"
+    wrong_col = f"Incorrect_{metric}"
+    gt_col = f"ground_truth_{metric}"
 
     # Look up threshold; fallback to default if missing
     threshold = custom_thresholds.get(metric, default_threshold)
@@ -123,18 +116,18 @@ for metric in metric_names:
 
     for domain_name, df in domain_dfs.items():
         pr_rewrite = calculate_pass_rate(df, rewrite_col, threshold)
-        pr_wrong   = calculate_pass_rate(df, wrong_col, threshold)
-        pr_gt      = calculate_pass_rate(df, gt_col, threshold)
+        pr_wrong = calculate_pass_rate(df, wrong_col, threshold)
+        pr_gt = calculate_pass_rate(df, gt_col, threshold)
 
         pass_rates_rewrite[domain_name] = pr_rewrite
-        pass_rates_wrong[domain_name]   = pr_wrong
-        pass_rates_gt[domain_name]      = pr_gt
+        pass_rates_wrong[domain_name] = pr_wrong
+        pass_rates_gt[domain_name] = pr_gt
 
     # Convert to arrays in a fixed domain order
     domain_order = ["techqa", "emanual", "delucionqa"]
     rewrite_vals = np.array([pass_rates_rewrite[d] for d in domain_order])
-    wrong_vals   = np.array([pass_rates_wrong[d]   for d in domain_order])
-    gt_vals      = np.array([pass_rates_gt[d]      for d in domain_order])
+    wrong_vals = np.array([pass_rates_wrong[d] for d in domain_order])
+    gt_vals = np.array([pass_rates_gt[d] for d in domain_order])
 
     # Function to compute mean, MAD, RMAD
     # MODIFIED: Now uses mean absolute deviation instead of median absolute deviation
@@ -160,7 +153,6 @@ for metric in metric_names:
     row = {
         "Metric": metric,
         "Model": model_name,
-
         # Re-write pass rates
         "techqa_rewrite_PassRate": rewrite_vals[0],
         "emanual_rewrite_PassRate": rewrite_vals[1],
@@ -168,7 +160,6 @@ for metric in metric_names:
         "rewrite_mean(PassRate)": rewrite_mean,  # Changed from median to mean
         "rewrite_MAD": rewrite_MAD,
         "rewrite_RMAD": rewrite_RMAD,
-
         # Wrong pass rates
         "techqa_wrong_PassRate": wrong_vals[0],
         "emanual_wrong_PassRate": wrong_vals[1],
@@ -176,14 +167,13 @@ for metric in metric_names:
         "wrong_mean(PassRate)": wrong_mean,  # Changed from median to mean
         "wrong_MAD": wrong_MAD,
         "wrong_RMAD": wrong_RMAD,
-
         # Ground Truth pass rates
         "techqa_ground_truth_PassRate": gt_vals[0],
         "emanual_ground_truth_PassRate": gt_vals[1],
         "delucionqa_ground_truth_PassRate": gt_vals[2],
         "ground_truth_mean(PassRate)": gt_mean,  # Changed from median to mean
         "ground_truth_MAD": gt_MAD,
-        "ground_truth_RMAD": gt_RMAD
+        "ground_truth_RMAD": gt_RMAD,
     }
 
     results.append(row)

@@ -2,7 +2,7 @@
 
 # RAG-LLM-Metric
 
-A comprehensive framework for evaluating Retrieval-Augmented Generation (RAG) systems using Large Language Models (LLMs). This project provides tools for evaluating RAG systems across multiple dimensions including key point evaluation, learning facilitation, and BERTScore metrics.
+A comprehensive framework for evaluating Retrieval-Augmented Generation (RAG) systems using Large Language Models (LLMs). This project provides a suite of evaluation tools that assess RAG systems across multiple dimensions including answer equivalence, factual correctness, context relevance, key point analysis, and more. The framework supports both traditional metrics like BERTScore and advanced LLM-based evaluations, with optional GPU acceleration for faster processing. It includes 13 specialized evaluators, each targeting different aspects of RAG system performance, from basic answer quality to complex aspects like learning facilitation and refusal accuracy.
 
 ## Features
 
@@ -216,15 +216,34 @@ wsl --install <Distribution Name>
 python3 -m sglang.launch_server --model deepseek-ai/DeepSeek-R1-Distill-Qwen-32B --trust-remote-code
 ```
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
 ## License
 
-[Add your license information here]
+MIT License
+
+Copyright (c) 2024 RAG-LLM-Metric
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## Contact
 
-[Add your contact information here]
+- **Cheng, Yao** - Khoury College of Computer Sciences, Northeastern University (cheng.yao1@northeastern.edu)
+- **Li, Kai** - Khoury College of Computer Sciences, Northeastern University (li.kai4@northeastern.edu)
+- **Li, Xueyun** - Khoury College of Computer Sciences, Northeastern University (li.xueyun@northeastern.edu)
+- **Liu, Muzhou** - Khoury College of Computer Sciences, Northeastern University (liu.muz@northeastern.edu)
 

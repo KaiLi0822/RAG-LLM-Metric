@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from agent.metric_discussion_agent import DynamicEvaluationOrchestrator
 
@@ -6,7 +7,7 @@ from agent.metric_discussion_agent import DynamicEvaluationOrchestrator
 async def main():
     evaluator = DynamicEvaluationOrchestrator(
         dataset_name="RAGEVALUATION-HJKMY/TSBC_100row_mistake_added",
-        evaluate_llm_model="o1-2024-12-17",
+        evaluate_llm_model="gpt-4o-2024-08-06",
         agent_llm_model="gpt-4o-mini-2024-07-18",
         max_discussion_round=20,
     )
@@ -27,4 +28,5 @@ if __name__ == "__main__":
     import dotenv
 
     dotenv.load_dotenv()
+    print(os.environ.get("ANSWER_TYPE"))
     asyncio.run(main())

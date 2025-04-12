@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "evaluator"}, {include = "data_annotator"}, {include = "execution_pipeline"}, {include = "agent"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.10,<3.14"
 openai = "^1.12.0"
 requests = "^2.31.0"
 datasets = "^2.16.1"
@@ -20,6 +20,10 @@ sentence-transformers = "^3.3"
 torch = { version = ">=2.1.2", optional = true }
 ragas = "^0.2.14"
 duckduckgo-search = "^7.5.5"
+autogen = "^0.8.6"
+autogen-agentchat = "==0.4.7"
+bert-score = "^0.3.13"
+pandas = "^2.2.3"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"

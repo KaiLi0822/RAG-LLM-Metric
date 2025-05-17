@@ -20,6 +20,9 @@ sentence-transformers = "^3.3"
 torch = { version = ">=2.1.2", optional = true }
 ragas = "^0.2.14"
 duckduckgo-search = "^7.5.5"
+bert-score = "^0.3.13"
+pandas = "^2.0.3"
+numpy = "1.26.4"
 
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.29.5"
